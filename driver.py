@@ -1,4 +1,5 @@
 import configparser
+import time
 from selenium import webdriver
 from selenium.webdriver.common.alert import Alert
 
@@ -14,17 +15,33 @@ USER_PASSWD = config['user']['passwd']
 driver = webdriver.Chrome()
 driver.get(URL)
 # enter login credentials
-user_id = driver.find_element_by_id("userId")
-user_id.send_keys(USER_ID)
-user_passwd = driver.find_element_by_id("userPasswd")
-user_passwd.send_keys(USER_PASSWD)
-login = driver.find_element_by_class_name("btn_login")
-login.click()
+driver.find_element_by_id("userId").send_keys(USER_ID)
+driver.find_element_by_id("userPasswd").send_keys(USER_PASSWD)
+driver.find_element_by_class_name("btn_login").click()
 # go to reservation page
-resv_apply = driver.find_element_by_xpath("//a[contains(@href, 'resv') and @class='btn_apply']")
-resv_apply.click()
-resv_apply = driver.find_element_by_class_name("btn_blue")
-resv_apply.click()
-resv_apply = driver.find_element_by_class_name("btn_blue_b")
-resv_apply.click()
+driver.find_element_by_xpath("//a[contains(@href, 'resv') and @class='btn_apply']").click()
+driver.find_element_by_class_name("btn_blue").click()
+driver.find_element_by_class_name("btn_blue_b").click()
+# choose time
+main_window = driver.window_handles[0]
+driver.find_element_by_xpath("//input[@name='deskSeq']").click()
+driver.find_element_by_xpath("//input[@name='selBusiType1_1']").click()
+driver.find_element_by_id("resvYmdSelect").click()
+popup_window = driver.window_handles[1]
+driver.switch_to.window(popup_window)
+time.sleep(2)
+dates = driver.find_elements_by_xpath("//table[@class='ui-datepicker-calendar']//a")
+for date in dates:
+    print("day: ", date.text)
+    # date.click()
+
+
+# apply_btn = driver.find_element_by_class_name("btn_blue")
+# apply_btn.click()
+
+#close
+time.sleep(5)
+driver.quit()
+
+
 
