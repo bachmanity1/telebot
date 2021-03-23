@@ -3,7 +3,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.remote import switch_to
-
+from selenium.common.exceptions import NoSuchWindowException
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -32,19 +32,29 @@ try:
     driver.switch_to.window(popup_window)
     time.sleep(2)
     # find earliest available date and time
-    dates_len = len(driver.find_elements_by_xpath("//table[@class='ui-datepicker-calendar']//a"))
-    for i in range(dates_len):
-        date = driver.find_elements_by_xpath("//table[@class='ui-datepicker-calendar']//a")[i]
-        print("day: ", date.text)
-        date.click()
-        times = driver.find_elements_by_xpath("//div[@class='select_time_table']//a")
-        for t in times:
-            t.click()
-            try:
-                alert = Alert(driver)
-                alert.accept()
-            except:
-                print(t.text + " : no alert message")
+    try:
+        while True:
+            dates_len = len(driver.find_elements_by_xpath("//table[@class='ui-datepicker-calendar']//a"))
+            for i in range(dates_len):
+                date = driver.find_elements_by_xpath("//table[@class='ui-datepicker-calendar']//a")[i]
+                print("day: ", date.text)
+                date.click()
+                times = driver.find_elements_by_xpath("//div[@class='select_time_table']//a")
+                for t in times:
+                    t.click()
+                    try:
+                        alert = Alert(driver)
+                        alert.accept()
+                    except:
+                        print(t.text + " : no alert message")
+            driver.find_element_by_xpath("//a[@class='ui-datepicker-next ui-corner-all']").click()
+    except NoSuchWindowException as e:
+        print("found available time slot")
+        driver.switch_to.window(main_window)
+    print("window title: ", driver.title)
+    driver.find_element_by_class_name("btn_blue").click()
+    driver.find_element_by_class_name("btn_blue_b").click()
+    print("succesfully made an resvervation")
 except Exception as e:
     print("something went wrong... ", str(e))
 finally:
