@@ -28,14 +28,17 @@ try:
     driver.find_element_by_class_name("btn_blue").click()
     driver.find_element_by_class_name("btn_blue_b").click()
    
+    main_window = driver.window_handles[0]
+    blank = True
     # find earliest available date and time
     while True:
-        main_window = driver.window_handles[0]
-        driver.find_element_by_xpath("//input[@name='deskSeq']").click()
-        driver.find_element_by_xpath("//input[@name='selBusiType1_1']").click()
-        driver.find_element_by_xpath("//select[@id='mobileTelNo1']").send_keys(USER_PHONE_NUMBER[0])
-        driver.find_element_by_xpath("//input[@id='mobileTelNo2']").send_keys(USER_PHONE_NUMBER[1])
-        driver.find_element_by_xpath("//input[@id='mobileTelNo3']").send_keys(USER_PHONE_NUMBER[2])
+        if blank:
+            driver.find_element_by_xpath("//input[@name='deskSeq']").click()
+            driver.find_element_by_xpath("//input[@name='selBusiType1_1']").click()
+            driver.find_element_by_xpath("//select[@id='mobileTelNo1']").send_keys(USER_PHONE_NUMBER[0])
+            driver.find_element_by_xpath("//input[@id='mobileTelNo2']").send_keys(USER_PHONE_NUMBER[1])
+            driver.find_element_by_xpath("//input[@id='mobileTelNo3']").send_keys(USER_PHONE_NUMBER[2])
+        
         driver.find_element_by_id("resvYmdSelect").click()
         popup_window = driver.window_handles[1]
         driver.switch_to.window(popup_window)
@@ -56,7 +59,7 @@ try:
                             pass
                             # print(t.text + " : no alert message")
                 driver.find_element_by_xpath("//a[@class='ui-datepicker-next ui-corner-all']").click()
-        except NoSuchWindowException as e:
+        except NoSuchWindowException:
             driver.switch_to.window(main_window)
         timeslot = driver.find_element_by_id("resvYmd").get_attribute('value')
         print("found available timeslot: ", timeslot)
@@ -67,7 +70,9 @@ try:
             driver.find_element_by_class_name("btn_blue_b").click()
             print("succesfully made an resvervation for: ", timeslot)
             driver.back()
-
+            blank = True
+        else:
+            blank = False
 except Exception as e:
     print("something went wrong... ", str(e))
 finally:
