@@ -10,3 +10,5 @@ This program will keep looking for earliest available timeslot and make an reser
  python driver.py
 ```     
 Program may end up making **TOO** many reservations. (manually check reservation status page)
+
+*TODO*: rewrite in golang and add telegram bot support
