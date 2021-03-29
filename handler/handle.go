@@ -21,10 +21,20 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 
 func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	var user *tgbotapi.User
+	var text string
+	var chatID int64
+	var restart bool
 	if update.Message != nil {
 		user = update.Message.From
+		text = update.Message.Text
+		chatID = update.Message.Chat.ID
+		if update.Message.IsCommand() {
+			restart = true
+		}
 	} else if update.CallbackQuery != nil {
 		user = update.CallbackQuery.From
+		text = update.CallbackQuery.Data
+		chatID = update.CallbackQuery.Message.Chat.ID
 	} else {
 		log.Printf("Unexpected update type: %v\n", update)
 		return
@@ -34,41 +44,34 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	if !ok {
 		uh = &userHandler{
 			user:    user,
+			chatID:  chatID,
 			bot:     h.bot,
-			updates: make(chan tgbotapi.Update, 100),
+			updates: make(chan string, 100),
 			data:    make(map[string]string),
 		}
 		go uh.handleUpdates()
 		userHandlers[user.ID] = uh
 	}
-	uh.updates <- update
+	if restart {
+		uh.seqid = 0
+	}
+	uh.updates <- text
 }
 
 var userHandlers map[int]*userHandler
 
 type userHandler struct {
-	user    *tgbotapi.User
 	bot     *tgbotapi.BotAPI
-	updates chan tgbotapi.Update
+	updates chan string
+	user    *tgbotapi.User
+	chatID  int64
 	data    map[string]string
 	seqid   int
 }
 
 func (uh *userHandler) handleUpdates() {
-	for update := range uh.updates {
-		var text string
-		var chatID int64
-		if update.Message != nil {
-			text = update.Message.Text
-			chatID = update.Message.Chat.ID
-			if update.Message.IsCommand() {
-				uh.seqid = 0
-			}
-		} else {
-			text = update.CallbackQuery.Data
-			chatID = update.CallbackQuery.Message.Chat.ID
-		}
-		msg := tgbotapi.NewMessage(chatID, "")
+	for text := range uh.updates {
+		msg := tgbotapi.NewMessage(uh.chatID, "")
 		if text == "exit" {
 			msg.Text = "Bye Bye!"
 			uh.bot.Send(msg)
@@ -94,5 +97,4 @@ func (uh *userHandler) handleUpdates() {
 	}
 	close(uh.updates)
 	delete(userHandlers, uh.user.ID)
-	log.Println("----------------------------------------------------------")
 }
