@@ -22,6 +22,9 @@ func main() {
 	u.Timeout = 60
 
 	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		log.Panic(err)
+	}
 
 	for update := range updates {
 		h.HandleUpdate(update)

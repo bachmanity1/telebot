@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -35,6 +36,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 			user:    user,
 			bot:     h.bot,
 			updates: make(chan tgbotapi.Update, 100),
+			data:    make(map[string]string),
 		}
 		go uh.handleUpdates()
 		userHandlers[user.ID] = uh
@@ -48,11 +50,49 @@ type userHandler struct {
 	user    *tgbotapi.User
 	bot     *tgbotapi.BotAPI
 	updates chan tgbotapi.Update
+	data    map[string]string
+	seqid   int
 }
 
 func (uh *userHandler) handleUpdates() {
 	for update := range uh.updates {
-		message := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		uh.bot.Send(message)
+		var text string
+		var chatID int64
+		if update.Message != nil {
+			text = update.Message.Text
+			chatID = update.Message.Chat.ID
+			if update.Message.IsCommand() {
+				uh.seqid = 0
+			}
+		} else {
+			text = update.CallbackQuery.Data
+			chatID = update.CallbackQuery.Message.Chat.ID
+		}
+		msg := tgbotapi.NewMessage(chatID, "")
+		if text == "exit" {
+			msg.Text = "Bye Bye!"
+			uh.bot.Send(msg)
+			break
+		}
+		uh.data[seqidToData[uh.seqid]] = text
+		replydata := seqidToReplies[uh.seqid]
+		if replydata != nil {
+			msg.Text = replydata.text
+			if replydata.isMarkup {
+				msg.ReplyMarkup = replydata.markup
+			}
+			uh.bot.Send(msg)
+			uh.seqid++
+		} else {
+			msg.Text = "Search may take some, plase wait"
+			uh.bot.Send(msg)
+			time.Sleep(3 * time.Second)
+			msg.Text = "2021/03/31"
+			msg.ReplyMarkup = results
+			uh.bot.Send(msg)
+		}
 	}
+	close(uh.updates)
+	delete(userHandlers, uh.user.ID)
+	log.Println("----------------------------------------------------------")
 }
