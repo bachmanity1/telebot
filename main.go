@@ -3,19 +3,19 @@ package main
 import (
 	"log"
 	"telebot/handler"
+	"telebot/util"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI(telebot.GetString("apitoken"))
+	logger := util.InitLog("main")
+	config := util.InitConfig()
+	bot, err := tgbotapi.NewBotAPI(config.GetString("apitoken"))
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
-
-	bot.Debug = true
-
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	logger.Debugw("Authorized", "accountname", bot.Self.UserName)
 
 	h := handler.NewHandler(bot)
 	u := tgbotapi.NewUpdate(0)

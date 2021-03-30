@@ -1,13 +1,20 @@
 package handler
 
 import (
-	"log"
+	"telebot/util"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.uber.org/zap"
+)
+
+var (
+	userHandlers map[int]*userHandler
+	logger       *zap.SugaredLogger
 )
 
 func init() {
+	logger = util.InitLog("handler")
 	userHandlers = make(map[int]*userHandler)
 }
 
@@ -36,10 +43,10 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 		text = update.CallbackQuery.Data
 		chatID = update.CallbackQuery.Message.Chat.ID
 	} else {
-		log.Printf("Unexpected update type: %v\n", update)
+		logger.Errorw("Unexpected update type", update)
 		return
 	}
-	log.Printf("New message from user: %s\n", user.UserName)
+	logger.Debugw("New message", "username", user.UserName, "message", text)
 	uh, ok := userHandlers[user.ID]
 	if !ok {
 		uh = &userHandler{
@@ -57,8 +64,6 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	}
 	uh.updates <- text
 }
-
-var userHandlers map[int]*userHandler
 
 type userHandler struct {
 	bot     *tgbotapi.BotAPI

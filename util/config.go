@@ -1,7 +1,6 @@
-package main
+package util
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/pflag"
@@ -10,19 +9,17 @@ import (
 
 const configFile = "config"
 
-var telebot *viper.Viper
-
-func init() {
+func InitConfig() *viper.Viper {
 	pflag.Parse()
 
 	var err error
-	telebot, err = readConfig(map[string]interface{}{})
+	botconfig, err := readConfig(map[string]interface{}{})
 	if err != nil {
-		log.Panicf("Error when reading config: %v\n", err)
 		os.Exit(1)
 	}
 
-	telebot.BindPFlags(pflag.CommandLine)
+	botconfig.BindPFlags(pflag.CommandLine)
+	return botconfig
 }
 
 func readConfig(defaults map[string]interface{}) (*viper.Viper, error) {

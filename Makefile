@@ -36,7 +36,7 @@ check: test staticcheck fmt vet lint ; $(info $(M) check all steps… ) @ ## Che
 
 .PHONY: build
 build: vendor ; $(info $(M) building executable… ) @ ## Build program binary
-	$Q cd $(BASE)/cmd && $(GOBUILD) build -i \
+	$Q cd $(BASE) && $(GOBUILD) build -i \
 		$(BUILDTAG) \
 		-mod vendor \
 		-o $(BIN)/$(PACKAGE)
