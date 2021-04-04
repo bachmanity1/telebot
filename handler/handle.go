@@ -2,7 +2,7 @@ package handler
 
 import (
 	"telebot/util"
-	"time"
+	"telebot/webdriver"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.uber.org/zap"
@@ -10,11 +10,11 @@ import (
 
 var (
 	userHandlers map[int]*userHandler
-	logger       *zap.SugaredLogger
+	log          *zap.SugaredLogger
 )
 
 func init() {
-	logger = util.InitLog("handler")
+	log = util.InitLog("handler")
 	userHandlers = make(map[int]*userHandler)
 }
 
@@ -43,10 +43,10 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 		text = update.CallbackQuery.Data
 		chatID = update.CallbackQuery.Message.Chat.ID
 	} else {
-		logger.Errorw("Unexpected update type", update)
+		log.Errorw("Unexpected update type", update)
 		return
 	}
-	logger.Debugw("New message", "username", user.UserName, "message", text)
+	log.Debugw("New message", "username", user.UserName, "message", text)
 	uh, ok := userHandlers[user.ID]
 	if !ok {
 		uh = &userHandler{
@@ -94,8 +94,10 @@ func (uh *userHandler) handleUpdates() {
 		} else {
 			msg.Text = "Search may take some, plase wait"
 			uh.bot.Send(msg)
-			time.Sleep(3 * time.Second)
-			msg.Text = "2021/03/31"
+			if err := webdriver.MakeAppointment(uh.data); err != nil {
+				log.Errorw("hadleUpdates", "error", err)
+			}
+			msg.Text = uh.data["timeslot"]
 			msg.ReplyMarkup = results
 			uh.bot.Send(msg)
 		}

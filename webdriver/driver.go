@@ -66,12 +66,17 @@ out1:
 			return err
 		}
 		elem.Click()
+		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//option[@value='%s']", data["branch"]))
+		if err != nil {
+			return err
+		}
+		elem.Click()
 		elem, err = wd.FindElement(sm.ByXPATH, "//input[@name='deskSeq']")
 		if err != nil {
 			return err
 		}
 		elem.Click()
-		elem, err = wd.FindElement(sm.ByXPATH, "//input[@name='selBusiType1_1']")
+		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@value='%s']", data["purpose"]))
 		if err != nil {
 			return err
 		}
