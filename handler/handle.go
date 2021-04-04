@@ -97,7 +97,7 @@ func (uh *userHandler) handleUpdates() {
 			if err := webdriver.MakeAppointment(uh.data); err != nil {
 				log.Errorw("hadleUpdates", "error", err)
 			}
-			msg.Text = uh.data["timeslot"]
+			msg.Text = "Made an appointment for: " + "**" + uh.data["timeslot"] + "**"
 			msg.ReplyMarkup = results
 			uh.bot.Send(msg)
 		}

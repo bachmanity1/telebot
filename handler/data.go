@@ -64,7 +64,8 @@ var purposes = tgbotapi.NewInlineKeyboardMarkup(
 var results = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Good Enough!", "exit"),
-		tgbotapi.NewInlineKeyboardButtonData("Look for earlier date", "2"),
+	), tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Look for an earlier date", "2"),
 	),
 )
 
