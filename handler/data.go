@@ -2,15 +2,12 @@ package handler
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-const replyLen = 7
-
 var seqidToData = map[int]string{
 	1: "branch",
-	2: "nationality",
-	3: "purpose",
-	4: "username",
-	5: "password",
-	6: "phone",
+	2: "purpose",
+	3: "username",
+	4: "password",
+	5: "phone",
 }
 
 var branches = tgbotapi.NewInlineKeyboardMarkup(
@@ -37,13 +34,6 @@ var branches = tgbotapi.NewInlineKeyboardMarkup(
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Daejeon Immigration Office", "1270727"),
-	),
-)
-
-var nationalities = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Chinese", "1"),
-		tgbotapi.NewInlineKeyboardButtonData("non-Chinese", "2"),
 	),
 )
 
@@ -86,9 +76,8 @@ type reply struct {
 
 var seqidToReplies = map[int]*reply{
 	0: {text: "Choose Immigration Branch", isMarkup: true, markup: branches},
-	1: {text: "Choose your nationality", isMarkup: true, markup: nationalities},
-	2: {text: "Choose purpose of visit", isMarkup: true, markup: purposes},
-	3: {text: "Enter your username", isMarkup: false},
-	4: {text: "Enter your password", isMarkup: false},
-	5: {text: "Enter your phone number", isMarkup: false},
+	1: {text: "Choose purpose of visit", isMarkup: true, markup: purposes},
+	2: {text: "Enter your username", isMarkup: false},
+	3: {text: "Enter your password", isMarkup: false},
+	4: {text: "Enter your phone number", isMarkup: false},
 }
