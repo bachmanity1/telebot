@@ -6,6 +6,6 @@ func InitLog(name string) *zap.SugaredLogger {
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
 	sugared := logger.Sugar()
-	sugared.Named(name)
+	sugared = sugared.Named(name)
 	return sugared
 }

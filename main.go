@@ -29,6 +29,7 @@ func main() {
 	// 	h.HandleUpdate(update)
 	// }
 
-	err = webdriver.MakeAppointment(data)
-	logger.Errorw("Webdriver error", "error", err)
+	if err := webdriver.MakeAppointment(data); err != nil {
+		logger.Errorw("Webdriver error", "error", err)
+	}
 }
