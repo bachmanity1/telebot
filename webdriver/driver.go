@@ -81,6 +81,23 @@ out1:
 			return err
 		}
 		elem.Click()
+		if phone := getPhoneNumber(data["phone"]); phone != nil {
+			elem, err = wd.FindElement(sm.ByXPATH, "//select[@id='mobileTelNo1']")
+			if err != nil {
+				return err
+			}
+			elem.SendKeys(phone[0])
+			elem, err = wd.FindElement(sm.ByXPATH, "//input[@id='mobileTelNo2']")
+			if err != nil {
+				return err
+			}
+			elem.SendKeys(phone[1])
+			elem, err = wd.FindElement(sm.ByXPATH, "//input[@id='mobileTelNo3']")
+			if err != nil {
+				return err
+			}
+			elem.SendKeys(phone[2])
+		}
 		for {
 			elem, err = wd.FindElement(sm.ByXPATH, "//a[@id='resvYmdSelect']")
 			if err != nil {
@@ -187,4 +204,28 @@ func parse(timeslot string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return t, true
+}
+
+func getPhoneNumber(input string) []string {
+	n := 3
+	number := make([]string, 0)
+	temp := make([]byte, 0)
+	for i := 0; i < len(input); i++ {
+		if input[i] >= '0' && input[i] <= '9' {
+			temp = append(temp, input[i])
+			if len(temp) == n {
+				number = append(number, string(temp))
+				temp = make([]byte, 0)
+				n = 4
+			}
+		} else if input[i] == '-' {
+			continue
+		} else {
+			return nil
+		}
+	}
+	if len(temp) != 0 || len(number) != 3 {
+		return nil
+	}
+	return number
 }
