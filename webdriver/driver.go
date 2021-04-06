@@ -77,7 +77,7 @@ out1:
 			return "", err
 		}
 		elem.Click()
-		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@id='%s']", data["subbranch"]))
+		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@id='%s']", data["subBranch"]))
 		if err != nil {
 			return "", err
 		}
@@ -294,12 +294,12 @@ func GetSubBranches(data map[string]string) (map[string]string, error) {
 		return nil, err
 	}
 	elem.Click()
-	subbranches := make(map[string]string)
+	subBranches := make(map[string]string)
 	elems, _ := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
 	for _, elem := range elems {
 		key, _ := elem.GetAttribute("for")
 		value, _ := elem.Text()
-		subbranches[key] = value
+		subBranches[key] = value
 	}
-	return subbranches, nil
+	return subBranches, nil
 }

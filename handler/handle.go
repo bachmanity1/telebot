@@ -97,23 +97,24 @@ func (uh *userHandler) handleEvents() {
 				break
 			}
 			uh.requestData[uh.expectedField] = event.value
-			if uh.expectedField == "branch" {
-				subbranches, err := webdriver.GetSubBranches(uh.requestData)
-				if err != nil {
-					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
-					uh.replyID = 0
-				}
-				insertSubbranchMarkup(subbranches)
-			}
-			nextMessage, ok := uh.getNextMessage()
-			if !ok {
+			nextMessage := uh.getNextMessage()
+			if uh.expectedField == "result" {
 				timeslot, err := webdriver.MakeAppointment(uh.requestData)
 				uh.requestData["prevtimeslot"] = timeslot
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
 				}
-				nextMessage = tgbotapi.NewMessage(uh.chatID, "Made an appointment for: "+timeslot)
-				nextMessage.ReplyMarkup = results
+				nextMessage.Text += timeslot
+			}
+			if uh.expectedField == "subBranch" {
+				subbranches, err := webdriver.GetSubBranches(uh.requestData)
+				if err != nil {
+					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
+					uh.replyID = 0
+					nextMessage = uh.getNextMessage()
+				} else {
+					nextMessage.ReplyMarkup = makeSubBranchMarkup(subbranches)
+				}
 			}
 			msg, _ := uh.bot.Send(nextMessage)
 			log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
@@ -125,17 +126,16 @@ func (uh *userHandler) handleEvents() {
 	}
 }
 
-func (uh *userHandler) getNextMessage() (tgbotapi.MessageConfig, bool) {
-	if uh.replyID >= len(replies) {
-		uh.expectedField = ""
-		return tgbotapi.MessageConfig{}, false
+func (uh *userHandler) getNextMessage() tgbotapi.MessageConfig {
+	reply := replies[len(replies)-1]
+	if uh.replyID < len(replies) {
+		reply = replies[uh.replyID]
 	}
-	reply := replies[uh.replyID]
 	message := tgbotapi.NewMessage(uh.chatID, reply.text)
 	if reply.isMarkup {
 		message.ReplyMarkup = reply.markup
 	}
 	uh.expectedField = reply.field
 	uh.replyID++
-	return message, true
+	return message
 }

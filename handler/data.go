@@ -63,30 +63,22 @@ var results = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-func insertSubbranchMarkup(subbranches map[string]string) {
+func makeSubBranchMarkup(subbranches map[string]string) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
 	for key, value := range subbranches {
 		button := tgbotapi.NewInlineKeyboardButtonData(shorten(value), key)
 		row := tgbotapi.NewInlineKeyboardRow(button)
 		rows = append(rows, row)
 	}
-	replies[3].markup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 func shorten(line string) string {
-	n := 0
 	if len(line) > maxButtonLength {
-		n = len(line) - maxButtonLength
+		n := len(line) - maxButtonLength
+		line = "..." + line[n:]
 	}
-	return "..." + line[n:]
-}
-
-var seqidToData = map[int]string{
-	1: "branch",
-	2: "purpose",
-	3: "username",
-	4: "password",
-	5: "phone",
+	return line
 }
 
 type reply struct {
@@ -100,7 +92,8 @@ var replies = []reply{
 	{field: "username", text: "Enter your username", isMarkup: false},
 	{field: "password", text: "Enter your password", isMarkup: false},
 	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branches},
-	{field: "subbranch", text: "Choose sub-branch", isMarkup: true},
+	{field: "subBranch", text: "Choose sub-branch", isMarkup: true},
 	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposes},
 	{field: "phone", text: "Enter your phone number", isMarkup: false},
+	{field: "result", text: "Made an appointment for: ", isMarkup: true, markup: results},
 }
