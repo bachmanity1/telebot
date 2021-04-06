@@ -100,7 +100,7 @@ func (uh *userHandler) handleUpdates() {
 				msg.Text = "Wrong username or password, start again"
 			} else if sb != nil {
 				subbranchMarkup := makeSubbranchMarkup(sb)
-				msg.Text = "Choose sub-branch"
+				msg.Text = "Choose Sub-Branch"
 				msg.ReplyMarkup = subbranchMarkup
 				log.Debugw("handleUpdate", "subbranches", sb)
 			} else {

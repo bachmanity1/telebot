@@ -2,6 +2,8 @@ package handler
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+const maxButtonLength = 40
+
 var seqidToData = map[int]string{
 	1: "branch",
 	2: "purpose",
@@ -86,9 +88,17 @@ var seqidToReplies = map[int]*reply{
 func makeSubbranchMarkup(subbranches map[string]string) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
 	for key, value := range subbranches {
-		button := tgbotapi.NewInlineKeyboardButtonData(value, key)
+		button := tgbotapi.NewInlineKeyboardButtonData(shorten(value), key)
 		row := tgbotapi.NewInlineKeyboardRow(button)
 		rows = append(rows, row)
 	}
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func shorten(line string) string {
+	n := 0
+	if len(line) > maxButtonLength {
+		n = len(line) - maxButtonLength
+	}
+	return "..." + line[n:]
 }

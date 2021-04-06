@@ -49,6 +49,11 @@ func MakeAppointment(data map[string]string) (map[string]string, error) {
 		return nil, err
 	}
 	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//a[@id='lang_en']")
+	if err != nil {
+		return nil, err
+	}
+	elem.Click()
 	elem, err = wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
 	if err != nil {
 		return nil, err
