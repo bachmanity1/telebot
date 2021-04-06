@@ -94,11 +94,19 @@ func (uh *userHandler) handleUpdates() {
 		} else {
 			msg.Text = "Search may take some time, please wait"
 			uh.bot.Send(msg)
-			if err := webdriver.MakeAppointment(uh.data); err != nil {
+			if sb, err := webdriver.MakeAppointment(uh.data); err != nil {
 				log.Errorw("hadleUpdates", "error", err)
+				uh.seqid = 0
+				msg.Text = "Wrong username or password, start again"
+			} else if sb != nil {
+				subbranchMarkup := makeSubbranchMarkup(sb)
+				msg.Text = "Choose sub-branch"
+				msg.ReplyMarkup = subbranchMarkup
+				log.Debugw("handleUpdate", "subbranches", sb)
+			} else {
+				msg.Text = "Made an appointment for: " + uh.data["timeslot"]
+				msg.ReplyMarkup = results
 			}
-			msg.Text = "Made an appointment for: " + uh.data["timeslot"]
-			msg.ReplyMarkup = results
 			uh.bot.Send(msg)
 		}
 	}

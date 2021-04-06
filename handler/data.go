@@ -82,3 +82,13 @@ var seqidToReplies = map[int]*reply{
 	3: {text: "Enter your password", isMarkup: false},
 	4: {text: "Enter your phone number", isMarkup: false},
 }
+
+func makeSubbranchMarkup(subbranches map[string]string) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
+	for key, value := range subbranches {
+		button := tgbotapi.NewInlineKeyboardButtonData(value, key)
+		row := tgbotapi.NewInlineKeyboardRow(button)
+		rows = append(rows, row)
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
