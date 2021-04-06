@@ -92,12 +92,12 @@ func (uh *userHandler) handleUpdates() {
 			uh.bot.Send(msg)
 			uh.seqid++
 		} else {
-			msg.Text = "Search may take some, plase wait"
+			msg.Text = "Search may take some time, please wait"
 			uh.bot.Send(msg)
 			if err := webdriver.MakeAppointment(uh.data); err != nil {
 				log.Errorw("hadleUpdates", "error", err)
 			}
-			msg.Text = "Made an appointment for: " + "**" + uh.data["timeslot"] + "**"
+			msg.Text = "Made an appointment for: " + uh.data["timeslot"]
 			msg.ReplyMarkup = results
 			uh.bot.Send(msg)
 		}
