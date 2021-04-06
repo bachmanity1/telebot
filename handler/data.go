@@ -4,14 +4,6 @@ import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 const maxButtonLength = 40
 
-var seqidToData = map[int]string{
-	1: "branch",
-	2: "purpose",
-	3: "username",
-	4: "password",
-	5: "phone",
-}
-
 var branches = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Seoul Immigration Office", "1270667"),
@@ -71,28 +63,14 @@ var results = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-type reply struct {
-	text     string
-	isMarkup bool
-	markup   tgbotapi.InlineKeyboardMarkup
-}
-
-var seqidToReplies = map[int]*reply{
-	0: {text: "Choose Immigration Branch", isMarkup: true, markup: branches},
-	1: {text: "Choose purpose of visit", isMarkup: true, markup: purposes},
-	2: {text: "Enter your username", isMarkup: false},
-	3: {text: "Enter your password", isMarkup: false},
-	4: {text: "Enter your phone number", isMarkup: false},
-}
-
-func makeSubbranchMarkup(subbranches map[string]string) tgbotapi.InlineKeyboardMarkup {
+func insertSubbranchMarkup(subbranches map[string]string) {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
 	for key, value := range subbranches {
 		button := tgbotapi.NewInlineKeyboardButtonData(shorten(value), key)
 		row := tgbotapi.NewInlineKeyboardRow(button)
 		rows = append(rows, row)
 	}
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+	replies[3].markup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 func shorten(line string) string {
@@ -101,4 +79,28 @@ func shorten(line string) string {
 		n = len(line) - maxButtonLength
 	}
 	return "..." + line[n:]
+}
+
+var seqidToData = map[int]string{
+	1: "branch",
+	2: "purpose",
+	3: "username",
+	4: "password",
+	5: "phone",
+}
+
+type reply struct {
+	field    string
+	text     string
+	isMarkup bool
+	markup   tgbotapi.InlineKeyboardMarkup
+}
+
+var replies = []reply{
+	{field: "username", text: "Enter your username", isMarkup: false},
+	{field: "password", text: "Enter your password", isMarkup: false},
+	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branches},
+	{field: "subbranch", text: "Choose sub-branch", isMarkup: true},
+	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposes},
+	{field: "phone", text: "Enter your phone number", isMarkup: false},
 }

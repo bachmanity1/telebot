@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const startcmd = "start"
+
 var (
 	userHandlers map[int]*userHandler
 	log          *zap.SugaredLogger
@@ -30,86 +32,110 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	var user *tgbotapi.User
 	var text string
 	var chatID int64
-	var restart bool
+	var messageID int
 	if update.Message != nil {
 		user = update.Message.From
 		text = update.Message.Text
 		chatID = update.Message.Chat.ID
-		if update.Message.IsCommand() {
-			restart = true
+		messageID = update.Message.MessageID
+		if update.Message.Command() == startcmd {
+			uh, ok := userHandlers[user.ID]
+			if ok {
+				delete(userHandlers, user.ID)
+				close(uh.events)
+			}
+			uh = &userHandler{
+				user:        user,
+				chatID:      chatID,
+				bot:         h.bot,
+				events:      make(chan *event, 100),
+				requestData: make(map[string]string),
+				expectedID:  messageID,
+			}
+			go uh.handleEvents()
+			userHandlers[user.ID] = uh
 		}
 	} else if update.CallbackQuery != nil {
 		user = update.CallbackQuery.From
 		text = update.CallbackQuery.Data
 		chatID = update.CallbackQuery.Message.Chat.ID
+		messageID = update.CallbackQuery.Message.MessageID
 	} else {
-		log.Errorw("Unexpected update type", update)
+		log.Errorw("Unexpected update type", "update", update)
 		return
 	}
-	log.Debugw("New message", "username", user.UserName, "message", text)
+	log.Debugw("Received message", "username", user.UserName, "text", text, "messageID", messageID)
 	uh, ok := userHandlers[user.ID]
 	if !ok {
-		uh = &userHandler{
-			user:    user,
-			chatID:  chatID,
-			bot:     h.bot,
-			updates: make(chan string, 100),
-			data:    make(map[string]string),
-		}
-		go uh.handleUpdates()
-		userHandlers[user.ID] = uh
+		h.bot.Send(tgbotapi.NewMessage(chatID, "type /start to make an appointment"))
+		return
 	}
-	if restart {
-		uh.seqid = 0
-	}
-	uh.updates <- text
+	uh.events <- &event{text, messageID}
 }
 
 type userHandler struct {
-	bot     *tgbotapi.BotAPI
-	updates chan string
-	user    *tgbotapi.User
-	chatID  int64
-	data    map[string]string
-	seqid   int
+	bot           *tgbotapi.BotAPI
+	user          *tgbotapi.User
+	chatID        int64
+	events        chan *event
+	requestData   map[string]string
+	expectedID    int
+	expectedField string
+	replyID       int
 }
 
-func (uh *userHandler) handleUpdates() {
-	for text := range uh.updates {
-		msg := tgbotapi.NewMessage(uh.chatID, "")
-		if text == "exit" {
-			msg.Text = "Bye Bye!"
-			uh.bot.Send(msg)
-			break
-		}
-		uh.data[seqidToData[uh.seqid]] = text
-		replydata := seqidToReplies[uh.seqid]
-		if replydata != nil {
-			msg.Text = replydata.text
-			if replydata.isMarkup {
-				msg.ReplyMarkup = replydata.markup
+type event struct {
+	value string
+	id    int
+}
+
+func (uh *userHandler) handleEvents() {
+	for event := range uh.events {
+		if uh.expectedID == event.id {
+			if event.value == "exit" {
+				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Bye Bye!"))
+				break
 			}
-			uh.bot.Send(msg)
-			uh.seqid++
-		} else {
-			msg.Text = "Search may take some time, please wait"
-			uh.bot.Send(msg)
-			if sb, err := webdriver.MakeAppointment(uh.data); err != nil {
-				log.Errorw("hadleUpdates", "error", err)
-				uh.seqid = 0
-				msg.Text = "Wrong username or password, start again"
-			} else if sb != nil {
-				subbranchMarkup := makeSubbranchMarkup(sb)
-				msg.Text = "Choose Sub-Branch"
-				msg.ReplyMarkup = subbranchMarkup
-				log.Debugw("handleUpdate", "subbranches", sb)
-			} else {
-				msg.Text = "Made an appointment for: " + uh.data["timeslot"]
-				msg.ReplyMarkup = results
+			uh.requestData[uh.expectedField] = event.value
+			if uh.expectedField == "branch" {
+				subbranches, err := webdriver.GetSubBranches(uh.requestData)
+				if err != nil {
+					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
+					uh.replyID = 0
+				}
+				insertSubbranchMarkup(subbranches)
 			}
-			uh.bot.Send(msg)
+			nextMessage, ok := uh.getNextMessage()
+			if !ok {
+				timeslot, err := webdriver.MakeAppointment(uh.requestData)
+				uh.requestData["prevtimeslot"] = timeslot
+				if err != nil {
+					log.Errorw("Make Appointment", "error", err)
+				}
+				nextMessage = tgbotapi.NewMessage(uh.chatID, "Made an appointment for: "+timeslot)
+				nextMessage.ReplyMarkup = results
+			}
+			msg, _ := uh.bot.Send(nextMessage)
+			log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
+			uh.expectedID = msg.MessageID
+			if nextMessage.ReplyMarkup == nil {
+				uh.expectedID++
+			}
 		}
 	}
-	close(uh.updates)
-	delete(userHandlers, uh.user.ID)
+}
+
+func (uh *userHandler) getNextMessage() (tgbotapi.MessageConfig, bool) {
+	if uh.replyID >= len(replies) {
+		uh.expectedField = ""
+		return tgbotapi.MessageConfig{}, false
+	}
+	reply := replies[uh.replyID]
+	message := tgbotapi.NewMessage(uh.chatID, reply.text)
+	if reply.isMarkup {
+		message.ReplyMarkup = reply.markup
+	}
+	uh.expectedField = reply.field
+	uh.replyID++
+	return message, true
 }
