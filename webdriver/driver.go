@@ -7,6 +7,7 @@ import (
 	"telebot/util"
 	"time"
 
+	"github.com/tebeka/selenium"
 	sm "github.com/tebeka/selenium"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,8 @@ func login(data map[string]string) (wd sm.WebDriver, err error) {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
-	wd, err = sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
+	wd, err = selenium.NewRemote(caps, "http://driver:4444/wd/hub")
+	// wd, err = sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return nil, err
 	}
