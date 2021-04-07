@@ -97,6 +97,7 @@ func (uh *userHandler) handleEvents() {
 			uh.requestData[uh.expectedField] = event.value
 			nextMessage := uh.getNextMessage()
 			if uh.expectedField == "receipt" {
+				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Search may take some time, please wait"))
 				receipt, err := webdriver.MakeAppointment(uh.requestData)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
@@ -109,7 +110,6 @@ func (uh *userHandler) handleEvents() {
 				}
 			}
 			if uh.expectedField == "booth" {
-
 				boothes, err := webdriver.GetBoothes(uh.requestData)
 				if err != nil {
 					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))

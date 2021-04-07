@@ -32,6 +32,8 @@ func login(data map[string]string) (wd sm.WebDriver, err error) {
 	if err != nil {
 		return nil, err
 	}
+	wd.SetPageLoadTimeout(2 * time.Second)
+	wd.SetImplicitWaitTimeout(2 * time.Second)
 	if err := wd.Get(baseURL); err != nil {
 		return nil, err
 	}
@@ -129,7 +131,6 @@ out1:
 			if err := wd.SwitchWindow(windows[1]); err != nil {
 				return "", err
 			}
-			time.Sleep(2 * time.Second)
 		out2:
 			for {
 				dates, err := wd.FindElements(sm.ByXPATH, "//table[@class='ui-datepicker-calendar']//a")
@@ -141,19 +142,18 @@ out1:
 					if err != nil {
 						return "", err
 					}
-					day, _ := dates[i].Text()
-					log.Debugw("Make Appointment", "day", day)
-					if err := dates[i].Click(); err != nil {
+					dates[i].Click()
+					timeslotes, err := wd.FindElements(sm.ByXPATH, "//div[@class='select_time_table']//a")
+					if err != nil {
+						log.Errorw("Make Appointment", "error", err)
 						if validBooth {
-							continue out1
+							wd.AcceptAlert()
+							continue
 						}
 						return "", err
 					}
 					validBooth = true
-					timeslotes, err := wd.FindElements(sm.ByXPATH, "//div[@class='select_time_table']//a")
-					if err != nil {
-						return "", err
-					}
+					time.Sleep(500 * time.Millisecond)
 					for _, timeslot := range timeslotes {
 						if err := timeslot.Click(); err != nil {
 							if err := wd.SwitchWindow(windows[0]); err != nil {
@@ -161,8 +161,6 @@ out1:
 							}
 							break out2
 						}
-						hour, _ := timeslot.Text()
-						log.Debugw("Make Appointment", "day", day, "hour", hour)
 						wd.AcceptAlert()
 					}
 				}
