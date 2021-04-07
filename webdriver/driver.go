@@ -22,7 +22,7 @@ func init() {
 	log = util.InitLog("driver")
 }
 
-func MakeAppointment(data map[string]string) (timeslot string, err error) {
+func MakeAppointment(data map[string]string) (receipt string, err error) {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
@@ -160,7 +160,7 @@ out1:
 			if err != nil {
 				return "", err
 			}
-			timeslot, err = elem.GetAttribute("value")
+			timeslot, err := elem.GetAttribute("value")
 			if err != nil {
 				return "", err
 			}
@@ -182,14 +182,32 @@ out1:
 					elem.Click()
 					continue out1
 				}
-				log.Infow("MakeAppointment Success", "username", data["username"], "timeslot", timeslot)
+				data["prevtimeslot"] = timeslot
+				trs, err := wd.FindElements(sm.ByXPATH, "//tr")
+				if err != nil {
+					return "", err
+				}
+				var sb strings.Builder
+				for _, tr := range trs {
+					th, _ := tr.FindElement(sm.ByTagName, "th")
+					td, _ := tr.FindElement(sm.ByTagName, "td")
+					if val, _ := td.Text(); val != "" {
+						key, _ := th.Text()
+						sb.WriteString(key)
+						sb.WriteString(": ")
+						sb.WriteString(val)
+						sb.WriteByte('\n')
+					}
+				}
+				receipt = strings.Trim(sb.String(), "\n")
+				log.Infow("MakeAppointment Success", "timeslot", timeslot, "receipt", receipt)
 				break out1
 			}
 		}
 	}
 
 	time.Sleep(5 * time.Second)
-	return timeslot, nil
+	return receipt, nil
 }
 
 func isValidTimeslot(prev, next string) bool {

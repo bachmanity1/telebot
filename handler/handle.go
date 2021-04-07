@@ -99,12 +99,11 @@ func (uh *userHandler) handleEvents() {
 			uh.requestData[uh.expectedField] = event.value
 			nextMessage := uh.getNextMessage()
 			if uh.expectedField == "result" {
-				timeslot, err := webdriver.MakeAppointment(uh.requestData)
-				uh.requestData["prevtimeslot"] = timeslot
+				receipt, err := webdriver.MakeAppointment(uh.requestData)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
 				}
-				nextMessage.Text += timeslot
+				nextMessage.Text = receipt
 			}
 			if uh.expectedField == "subBranch" {
 				subbranches, err := webdriver.GetSubBranches(uh.requestData)
