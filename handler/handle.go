@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const startcmd = "start"
-
 var (
 	userHandlers map[int]*userHandler
 	log          *zap.SugaredLogger
@@ -38,7 +36,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 		text = update.Message.Text
 		chatID = update.Message.Chat.ID
 		messageID = update.Message.MessageID
-		if update.Message.Command() == startcmd {
+		if update.Message.Command() == "start" {
 			uh, ok := userHandlers[user.ID]
 			if ok {
 				delete(userHandlers, user.ID)
@@ -98,21 +96,25 @@ func (uh *userHandler) handleEvents() {
 			}
 			uh.requestData[uh.expectedField] = event.value
 			nextMessage := uh.getNextMessage()
-			if uh.expectedField == "result" {
+			if uh.expectedField == "receipt" {
 				receipt, err := webdriver.MakeAppointment(uh.requestData)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
+					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Something went wrong, please retry"))
+					uh.replyID = 0
+					nextMessage = uh.getNextMessage()
+				} else {
+					nextMessage.Text = receipt
 				}
-				nextMessage.Text = receipt
 			}
-			if uh.expectedField == "subBranch" {
-				subbranches, err := webdriver.GetSubBranches(uh.requestData)
+			if uh.expectedField == "booth" {
+				boothes, err := webdriver.GetBoothes(uh.requestData)
 				if err != nil {
 					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
 					uh.replyID = 0
 					nextMessage = uh.getNextMessage()
 				} else {
-					nextMessage.ReplyMarkup = makeSubBranchMarkup(subbranches)
+					nextMessage.ReplyMarkup = makeBoothMarkup(boothes)
 				}
 			}
 			msg, _ := uh.bot.Send(nextMessage)

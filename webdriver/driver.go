@@ -77,12 +77,7 @@ out1:
 			return "", err
 		}
 		elem.Click()
-		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@id='%s']", data["subBranch"]))
-		if err != nil {
-			return "", err
-		}
-		elem.Click()
-		elem, err = wd.FindElement(sm.ByXPATH, "//input[@name='deskSeq']")
+		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@id='%s']", data["booth"]))
 		if err != nil {
 			return "", err
 		}
@@ -206,7 +201,6 @@ out1:
 		}
 	}
 
-	time.Sleep(5 * time.Second)
 	return receipt, nil
 }
 
@@ -259,7 +253,7 @@ func getPhoneNumber(input string) []string {
 	return number
 }
 
-func GetSubBranches(data map[string]string) (map[string]string, error) {
+func GetBoothes(data map[string]string) ([]string, error) {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
@@ -312,12 +306,12 @@ func GetSubBranches(data map[string]string) (map[string]string, error) {
 		return nil, err
 	}
 	elem.Click()
-	subBranches := make(map[string]string)
+	boothes := make([]string, 0)
 	elems, _ := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
 	for _, elem := range elems {
 		key, _ := elem.GetAttribute("for")
 		value, _ := elem.Text()
-		subBranches[key] = value
+		boothes = append(boothes, key, value)
 	}
-	return subBranches, nil
+	return boothes, nil
 }

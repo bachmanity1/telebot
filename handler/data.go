@@ -4,7 +4,7 @@ import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 const maxButtonLength = 40
 
-var branches = tgbotapi.NewInlineKeyboardMarkup(
+var branchMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Seoul Immigration Office", "1270667"),
 	),
@@ -31,7 +31,7 @@ var branches = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-var purposes = tgbotapi.NewInlineKeyboardMarkup(
+var purposeMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Foreign Resident Registration", "F01"),
 	), tgbotapi.NewInlineKeyboardRow(
@@ -55,7 +55,7 @@ var purposes = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-var results = tgbotapi.NewInlineKeyboardMarkup(
+var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Good Enough!", "exit"),
 	), tgbotapi.NewInlineKeyboardRow(
@@ -63,10 +63,15 @@ var results = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
-func makeSubBranchMarkup(subbranches map[string]string) tgbotapi.InlineKeyboardMarkup {
+func makeBoothMarkup(boothes []string) tgbotapi.InlineKeyboardMarkup {
+	if len(boothes)%2 != 0 {
+		return tgbotapi.InlineKeyboardMarkup{}
+	}
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
-	for key, value := range subbranches {
-		button := tgbotapi.NewInlineKeyboardButtonData(shorten(value), key)
+	for i := 0; i < len(boothes); i += 2 {
+		key := boothes[i]
+		val := boothes[i+1]
+		button := tgbotapi.NewInlineKeyboardButtonData(shorten(val), key)
 		row := tgbotapi.NewInlineKeyboardRow(button)
 		rows = append(rows, row)
 	}
@@ -91,9 +96,9 @@ type reply struct {
 var replies = []reply{
 	{field: "username", text: "Enter your username", isMarkup: false},
 	{field: "password", text: "Enter your password", isMarkup: false},
-	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branches},
-	{field: "subBranch", text: "Choose sub-branch", isMarkup: true},
-	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposes},
+	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branchMarkup},
+	{field: "booth", text: "Choose Booth Category", isMarkup: true},
+	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},
 	{field: "phone", text: "Enter your phone number", isMarkup: false},
-	{field: "result", text: "Made an appointment for: ", isMarkup: true, markup: results},
+	{field: "receipt", text: "Receeipt", isMarkup: true, markup: receiptMarkup},
 }
