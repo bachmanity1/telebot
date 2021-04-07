@@ -105,9 +105,11 @@ func (uh *userHandler) handleEvents() {
 					nextMessage = uh.getNextMessage()
 				} else {
 					nextMessage.Text = receipt
+					go webdriver.CancelPrevAppointment(uh.requestData)
 				}
 			}
 			if uh.expectedField == "booth" {
+
 				boothes, err := webdriver.GetBoothes(uh.requestData)
 				if err != nil {
 					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))

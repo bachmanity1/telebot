@@ -1,6 +1,7 @@
 package webdriver
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"telebot/util"
@@ -11,9 +12,10 @@ import (
 )
 
 const (
-	port    = 9515
-	baseURL = "https://www.hikorea.go.kr/memb/MembLoginR.pt"
-	layout  = "2006-01-02"
+	port         = 9515
+	baseURL      = "https://www.hikorea.go.kr/memb/MembLoginR.pt"
+	layout       = "2006-01-02"
+	layoutCancel = "2006. 01. 02    15 : 04"
 )
 
 var log *zap.SugaredLogger
@@ -22,39 +24,47 @@ func init() {
 	log = util.InitLog("driver")
 }
 
-func MakeAppointment(data map[string]string) (receipt string, err error) {
+func login(data map[string]string) (wd sm.WebDriver, err error) {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
-	wd, err := sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
+	wd, err = sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	defer wd.Quit()
 	if err := wd.Get(baseURL); err != nil {
-		return "", err
+		return nil, err
 	}
 	elem, err := wd.FindElement(sm.ByXPATH, "//input[@id='userId']")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	elem.SendKeys(data["username"])
 	elem, err = wd.FindElement(sm.ByXPATH, "//input[@id='userPasswd']")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	elem.SendKeys(data["password"])
 	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_login']")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	elem.Click()
 	elem, err = wd.FindElement(sm.ByXPATH, "//a[@id='lang_en']")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
+	return wd, nil
+}
+
+func MakeAppointment(data map[string]string) (receipt string, err error) {
+	wd, err := login(data)
+	if err != nil {
+		return "", err
+	}
+	defer wd.Quit()
+	elem, err := wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
 	if err != nil {
 		return "", err
 
@@ -131,9 +141,9 @@ out1:
 					if err != nil {
 						return "", err
 					}
-					// day, _ := dates[i].Text()
-					err = dates[i].Click()
-					if err != nil {
+					day, _ := dates[i].Text()
+					log.Debugw("Make Appointment", "day", day)
+					if err := dates[i].Click(); err != nil {
 						if validBooth {
 							continue out1
 						}
@@ -151,8 +161,8 @@ out1:
 							}
 							break out2
 						}
-						// hour, _ := timeslot.Text()
-						// log.Debugw("Make Appointment", "day", day, "hour", hour)
+						hour, _ := timeslot.Text()
+						log.Debugw("Make Appointment", "day", day, "hour", hour)
 						wd.AcceptAlert()
 					}
 				}
@@ -215,6 +225,115 @@ out1:
 	return receipt, nil
 }
 
+func GetBoothes(data map[string]string) ([]string, error) {
+	wd, err := login(data)
+	if err != nil {
+		return nil, err
+	}
+	defer wd.Quit()
+	elem, err := wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
+	if err != nil {
+		return nil, err
+
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//button[@class='btn_blue']")
+	if err != nil {
+		return nil, err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_blue_b']")
+	if err != nil {
+		return nil, err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//option[@value='%s']", data["branch"]))
+	if err != nil {
+		return nil, err
+	}
+	elem.Click()
+	boothes := make([]string, 0)
+	elems, _ := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
+	for _, elem := range elems {
+		key, _ := elem.GetAttribute("for")
+		value, _ := elem.Text()
+		boothes = append(boothes, key, value)
+	}
+	return boothes, nil
+}
+
+func CancelPrevAppointment(data map[string]string) {
+	prev, err := cancelPrevAppointment(data)
+	if err != nil {
+		log.Errorw("CancelPrevAppointment", "error", err)
+		return
+	}
+	log.Debugw("CancelPrevAppointment", "prev", prev)
+}
+
+func cancelPrevAppointment(data map[string]string) (prev string, err error) {
+	wd, err := login(data)
+	if err != nil {
+		return "", err
+	}
+	defer wd.Quit()
+	elem, err := wd.FindElement(sm.ByXPATH, "//a[@title='Reserve Visit Status']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//option[@value='RS']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//button[@class='btn_search']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	trs, err := wd.FindElements(sm.ByXPATH, "//div[@class='grp_table scroll_x']//tbody//tr")
+	if err != nil {
+		return "", err
+	}
+	if len(trs) < 2 {
+		return "", errors.New("No previous appointment exists")
+	}
+	var prevA sm.WebElement
+	for _, tr := range trs {
+		tds, err := tr.FindElements(sm.ByTagName, "td")
+		if err != nil {
+			return "", err
+		}
+		a, err := tds[1].FindElement(sm.ByTagName, "a")
+		if err != nil {
+			return "", err
+		}
+		curr, _ := a.Text()
+		if isLater(curr, prev) {
+			prevA = a
+			prev = curr
+		}
+	}
+	prevA.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//a[@id='btn_cencelResv']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_blue_b']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_blue_b']")
+	if err != nil {
+		return "", err
+	}
+	elem.Click()
+	return prev, nil
+}
+
 func isValidTimeslot(prev, next string) bool {
 	nexttime, ok := parse(next)
 	if !ok {
@@ -264,65 +383,11 @@ func getPhoneNumber(input string) []string {
 	return number
 }
 
-func GetBoothes(data map[string]string) ([]string, error) {
-	caps := sm.Capabilities{
-		"browserName": "chrome",
+func isLater(curr, prev string) bool {
+	if prev == "" {
+		return true
 	}
-	wd, err := sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
-	if err != nil {
-		return nil, err
-	}
-	defer wd.Quit()
-	if err := wd.Get(baseURL); err != nil {
-		return nil, err
-	}
-	elem, err := wd.FindElement(sm.ByXPATH, "//input[@id='userId']")
-	if err != nil {
-		return nil, err
-	}
-	elem.SendKeys(data["username"])
-	elem, err = wd.FindElement(sm.ByXPATH, "//input[@id='userPasswd']")
-	if err != nil {
-		return nil, err
-	}
-	elem.SendKeys(data["password"])
-	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_login']")
-	if err != nil {
-		return nil, err
-	}
-	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, "//a[@id='lang_en']")
-	if err != nil {
-		return nil, err
-	}
-	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
-	if err != nil {
-		return nil, err
-
-	}
-	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, "//button[@class='btn_blue']")
-	if err != nil {
-		return nil, err
-	}
-	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, "//a[@class='btn_blue_b']")
-	if err != nil {
-		return nil, err
-	}
-	elem.Click()
-	elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//option[@value='%s']", data["branch"]))
-	if err != nil {
-		return nil, err
-	}
-	elem.Click()
-	boothes := make([]string, 0)
-	elems, _ := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
-	for _, elem := range elems {
-		key, _ := elem.GetAttribute("for")
-		value, _ := elem.Text()
-		boothes = append(boothes, key, value)
-	}
-	return boothes, nil
+	prevtime, _ := time.Parse(layoutCancel, prev)
+	currtime, _ := time.Parse(layoutCancel, curr)
+	return currtime.After(prevtime)
 }
