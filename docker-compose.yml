@@ -1,0 +1,8 @@
+version: '3'
+services:
+  telebot:
+    build: .
+    environment:
+      DRIVER_HOST: driver
+  driver:
+    image: selenium/standalone-chrome
