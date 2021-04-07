@@ -3,6 +3,7 @@ import time
 from dateutil import parser
 from datetime import datetime, timedelta
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.alert import Alert
 from selenium.common.exceptions import NoSuchWindowException
 
@@ -14,7 +15,13 @@ USER_ID = config['user']['id']
 USER_PASSWD = config['user']['passwd']
 USER_PHONE_NUMBER = config['user']['phone'].split('-')
 
-driver = webdriver.Chrome()
+chrome_options = Options()
+#chrome_options.add_argument("--disable-extensions")
+#chrome_options.add_argument("--disable-gpu")
+#chrome_options.add_argument("--no-sandbox") # linux only
+chrome_options.add_argument("--headless")
+# chrome_options.headless = True # also works
+driver = webdriver.Chrome(options=chrome_options)
 earliest_date = datetime.now() + timedelta(days=300)
 try:
     # go to login page
