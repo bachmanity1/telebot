@@ -82,6 +82,7 @@ out1:
 			return "", err
 		}
 		elem.Click()
+		validBooth := false
 		elem, err = wd.FindElement(sm.ByXPATH, fmt.Sprintf("//input[@value='%s']", data["purpose"]))
 		if err != nil {
 			return "", err
@@ -130,7 +131,15 @@ out1:
 					if err != nil {
 						return "", err
 					}
-					dates[i].Click()
+					// day, _ := dates[i].Text()
+					err = dates[i].Click()
+					if err != nil {
+						if validBooth {
+							continue out1
+						}
+						return "", err
+					}
+					validBooth = true
 					timeslotes, err := wd.FindElements(sm.ByXPATH, "//div[@class='select_time_table']//a")
 					if err != nil {
 						return "", err
@@ -142,6 +151,8 @@ out1:
 							}
 							break out2
 						}
+						// hour, _ := timeslot.Text()
+						// log.Debugw("Make Appointment", "day", day, "hour", hour)
 						wd.AcceptAlert()
 					}
 				}

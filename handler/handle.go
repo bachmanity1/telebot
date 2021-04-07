@@ -100,7 +100,7 @@ func (uh *userHandler) handleEvents() {
 				receipt, err := webdriver.MakeAppointment(uh.requestData)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
-					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Something went wrong, please retry"))
+					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
 					uh.replyID = 0
 					nextMessage = uh.getNextMessage()
 				} else {

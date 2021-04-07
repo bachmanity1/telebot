@@ -99,6 +99,6 @@ var replies = []reply{
 	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branchMarkup},
 	{field: "booth", text: "Choose Booth Category", isMarkup: true},
 	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},
-	{field: "phone", text: "Enter your phone number", isMarkup: false},
+	{field: "phone", text: "Enter your phone number (optional)", isMarkup: false},
 	{field: "receipt", text: "Receeipt", isMarkup: true, markup: receiptMarkup},
 }
