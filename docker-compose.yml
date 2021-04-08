@@ -9,4 +9,4 @@ services:
   driver:
     image: selenium/standalone-chrome
     environment:
-      START_XVFB: false
+      START_XVFB: 'false'
