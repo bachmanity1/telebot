@@ -18,7 +18,7 @@ Live version of this bot is can be found in Telegram @hikoreanelsonbot
  docker-compose up
 ```
 
-## Run tests 
+## Run Tests 
 ```bash
  make test
 ```

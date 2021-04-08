@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/tebeka/selenium"
 	sm "github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 	"go.uber.org/zap"
@@ -48,7 +47,7 @@ func login(data map[string]string) (wd sm.WebDriver, err error) {
 		},
 	}
 	caps.AddChrome(chromeCaps)
-	wd, err = selenium.NewRemote(caps, driverURL)
+	wd, err = sm.NewRemote(caps, driverURL)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +314,7 @@ func cancelPrevAppointment(data map[string]string) (prev string, err error) {
 		return "", err
 	}
 	if len(trs) < 2 {
-		return "", errors.New("No previous appointment exists")
+		return "", errors.New("no previous appointment exists")
 	}
 	var prevA sm.WebElement
 	for _, tr := range trs {
