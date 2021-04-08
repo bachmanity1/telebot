@@ -4,6 +4,7 @@ import (
 	"log"
 	"telebot/handler"
 	"telebot/util"
+	"telebot/webdriver"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -11,6 +12,8 @@ import (
 func main() {
 	logger := util.InitLog("main")
 	config := util.InitConfig()
+	webdriver.InitDriver(config)
+
 	bot, err := tgbotapi.NewBotAPI(config.GetString("apitoken"))
 	if err != nil {
 		logger.Panic(err)

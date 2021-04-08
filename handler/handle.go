@@ -111,7 +111,9 @@ func (uh *userHandler) handleEvents() {
 			}
 			if uh.expectedField == "booth" {
 				boothes, err := webdriver.GetBoothes(uh.requestData)
-				log.Errorw("Get Booth", "error", err)
+				if err != nil {
+					log.Errorw("GetBoothes", "error", err)
+				}
 				if err != nil {
 					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
 					uh.replyID = 0

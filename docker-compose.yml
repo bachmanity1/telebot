@@ -4,5 +4,7 @@ services:
     build: .
     environment:
       DRIVER_HOST: driver
+      DRIVER_PORT: 4444
+      DRIVER_API_PREFIX: wd/hub
   driver:
     image: selenium/standalone-chrome

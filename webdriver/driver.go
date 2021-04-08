@@ -7,30 +7,46 @@ import (
 	"telebot/util"
 	"time"
 
+	"github.com/spf13/viper"
 	"github.com/tebeka/selenium"
 	sm "github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 	"go.uber.org/zap"
 )
 
 const (
-	port         = 9515
-	baseURL      = "https://www.hikorea.go.kr/memb/MembLoginR.pt"
-	layout       = "2006-01-02"
-	layoutCancel = "2006. 01. 02    15 : 04"
+	baseURL          = "https://www.hikorea.go.kr/memb/MembLoginR.pt"
+	applyTimeLayout  = "2006-01-02"
+	cancelTimeLayout = "2006. 01. 02    15 : 04"
 )
 
-var log *zap.SugaredLogger
+var (
+	log       *zap.SugaredLogger
+	driverURL string
+)
 
-func init() {
+func InitDriver(config *viper.Viper) {
 	log = util.InitLog("driver")
+	host := config.GetString("driver_host")
+	port := config.GetString("driver_port")
+	apiPrefix := config.GetString("driver_api_prefix")
+	driverURL = fmt.Sprintf("http://%s:%s/%s", host, port, apiPrefix)
 }
 
 func login(data map[string]string) (wd sm.WebDriver, err error) {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
-	wd, err = selenium.NewRemote(caps, "http://driver:4444/wd/hub")
-	// wd, err = sm.NewRemote(caps, fmt.Sprintf("http://localhost:%d", port))
+	chromeCaps := chrome.Capabilities{
+		Path: "",
+		Args: []string{
+			"--headless",
+			"--no-sandbox",
+			"--disable-extensions",
+		},
+	}
+	caps.AddChrome(chromeCaps)
+	wd, err = selenium.NewRemote(caps, driverURL)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +368,7 @@ func parse(timeslot string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	timeslot = strings.Fields(timeslot)[0]
-	t, err := time.Parse(layout, timeslot)
+	t, err := time.Parse(applyTimeLayout, timeslot)
 	if err != nil {
 		return time.Time{}, false
 	}
@@ -387,7 +403,7 @@ func isLater(curr, prev string) bool {
 	if prev == "" {
 		return true
 	}
-	prevtime, _ := time.Parse(layoutCancel, prev)
-	currtime, _ := time.Parse(layoutCancel, curr)
+	prevtime, _ := time.Parse(cancelTimeLayout, prev)
+	currtime, _ := time.Parse(cancelTimeLayout, curr)
 	return currtime.After(prevtime)
 }
