@@ -29,10 +29,10 @@ func readConfig(defaults map[string]interface{}) (*viper.Viper, error) {
 	for key, value := range defaults {
 		v.SetDefault(key, value)
 	}
-	v.AddConfigPath("./util")
 	v.AddConfigPath("./")
 	v.AddConfigPath("../")
 	v.AddConfigPath("../../")
+	v.AddConfigPath("./util")
 
 	v.AutomaticEnv()
 
