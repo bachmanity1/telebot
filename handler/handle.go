@@ -40,7 +40,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 			uh, ok := userHandlers[user.ID]
 			if ok {
 				uh.done <- true
-				<-uh.events
+				<-uh.done
 			}
 			uh = &userHandler{
 				user:        user,
@@ -50,6 +50,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 				requestData: make(map[string]string),
 				expectedID:  messageID,
 				done:        make(chan bool),
+				active:      true,
 			}
 			go uh.handleEvents()
 			userHandlers[user.ID] = uh
@@ -82,6 +83,7 @@ type userHandler struct {
 	expectedField string
 	replyID       int
 	done          chan bool
+	active        bool
 }
 
 type event struct {
@@ -94,25 +96,28 @@ func (uh *userHandler) handleEvents() {
 	wdDone := make(chan bool)
 	go func() {
 		<-uh.done
-		close(wdDone)
+		uh.active = false
 		delete(userHandlers, uh.user.ID)
 		close(uh.events)
-		log.Debugw("handleEvents cleanup done", "username", uh.user.UserName)
+		close(uh.done)
+		close(wdDone)
+		log.Debugw("handleEvents cleanup", "username", uh.user.UserName)
 	}()
 	for event := range uh.events {
 		if uh.expectedID == event.id {
 			if event.value == "exit" {
-				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Bye Bye!"))
+				uh.send(tgbotapi.NewMessage(uh.chatID, "Bye Bye!"))
+				uh.done <- true
 				break
 			}
 			uh.requestData[uh.expectedField] = event.value
 			nextMessage := uh.getNextMessage()
 			if uh.expectedField == "receipt" {
-				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
+				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
 				receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
-					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
+					uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
 					uh.replyID = 0
 					nextMessage = uh.getNextMessage()
 				} else {
@@ -126,14 +131,14 @@ func (uh *userHandler) handleEvents() {
 					log.Errorw("GetBoothes", "error", err)
 				}
 				if err != nil {
-					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
+					uh.send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
 					uh.replyID = 0
 					nextMessage = uh.getNextMessage()
 				} else {
 					nextMessage.ReplyMarkup = makeBoothMarkup(boothes)
 				}
 			}
-			msg, _ := uh.bot.Send(nextMessage)
+			msg, _ := uh.send(nextMessage)
 			log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
 			uh.expectedID = msg.MessageID
 			if nextMessage.ReplyMarkup == nil {
@@ -141,7 +146,7 @@ func (uh *userHandler) handleEvents() {
 			}
 		}
 	}
-	log.Debugw("handleUpdate exit", "username", uh.user.UserName)
+	log.Debugw("handleEvents exit", "username", uh.user.UserName)
 }
 
 func (uh *userHandler) getNextMessage() tgbotapi.MessageConfig {
@@ -156,4 +161,11 @@ func (uh *userHandler) getNextMessage() tgbotapi.MessageConfig {
 	uh.expectedField = reply.field
 	uh.replyID++
 	return message
+}
+
+func (uh *userHandler) send(message tgbotapi.MessageConfig) (tgbotapi.Message, error) {
+	if uh.active {
+		return uh.bot.Send(message)
+	}
+	return tgbotapi.Message{}, nil
 }

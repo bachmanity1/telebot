@@ -85,13 +85,10 @@ func MakeAppointment(data map[string]string, done chan bool) (receipt string, er
 	if err != nil {
 		return "", err
 	}
-	defer wd.Quit()
 	go func() {
 		<-done
-		if wd != nil {
-			log.Debugw("MakeAppointment", "remove zombie process", wd.SessionID())
-			wd.Quit()
-		}
+		log.Debugw("MakeAppointment", "closing webdriver session", wd.SessionID())
+		wd.Quit()
 	}()
 	elem, err := wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
 	if err != nil {
@@ -246,7 +243,7 @@ out1:
 			}
 		}
 	}
-
+	done <- true
 	return receipt, nil
 }
 
