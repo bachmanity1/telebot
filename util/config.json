@@ -1,0 +1,6 @@
+{
+   "apitoken": "YOUR_TELEGRAM_BOT_APITOKEN",
+   "driver_host": "localhost",
+   "driver_port": 9515,
+   "driver_api_prefix": ""
+}
