@@ -102,3 +102,10 @@ var replies = []reply{
 	{field: "phone", text: "Enter your phone number (optional)", isMarkup: false},
 	{field: "receipt", text: "Receeipt", isMarkup: true, markup: receiptMarkup},
 }
+
+type updateType int
+
+const (
+	plainText = updateType(iota)
+	callbackQuery
+)

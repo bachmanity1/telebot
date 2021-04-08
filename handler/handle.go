@@ -31,7 +31,9 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	var text string
 	var chatID int64
 	var messageID int
+	var uType updateType
 	if update.Message != nil {
+		uType = plainText
 		user = update.Message.From
 		text = update.Message.Text
 		chatID = update.Message.Chat.ID
@@ -48,20 +50,21 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 				bot:         h.bot,
 				events:      make(chan *event, 100),
 				requestData: make(map[string]string),
-				expectedID:  messageID,
+				nextID:      messageID,
 				done:        make(chan bool),
-				active:      true,
+				isActive:    true,
 			}
 			go uh.handleEvents()
 			userHandlers[user.ID] = uh
 		}
 	} else if update.CallbackQuery != nil {
+		uType = callbackQuery
 		user = update.CallbackQuery.From
 		text = update.CallbackQuery.Data
 		chatID = update.CallbackQuery.Message.Chat.ID
 		messageID = update.CallbackQuery.Message.MessageID
 	} else {
-		log.Errorw("Unexpected update type", "update", update)
+		log.Errorw("Unnext update type", "update", update)
 		return
 	}
 	log.Debugw("Received message", "username", user.UserName, "text", text, "messageID", messageID)
@@ -70,25 +73,27 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 		h.bot.Send(tgbotapi.NewMessage(chatID, "Type /start to make an appointment"))
 		return
 	}
-	uh.events <- &event{text, messageID}
+	uh.events <- &event{text, messageID, uType}
 }
 
 type userHandler struct {
-	bot           *tgbotapi.BotAPI
-	user          *tgbotapi.User
-	chatID        int64
-	events        chan *event
-	requestData   map[string]string
-	expectedID    int
-	expectedField string
-	replyID       int
-	done          chan bool
-	active        bool
+	bot         *tgbotapi.BotAPI
+	user        *tgbotapi.User
+	chatID      int64
+	events      chan *event
+	requestData map[string]string
+	nextID      int
+	nextType    updateType
+	nextField   string
+	replyID     int
+	done        chan bool
+	isActive    bool
 }
 
 type event struct {
 	value string
 	id    int
+	uType updateType
 }
 
 func (uh *userHandler) handleEvents() {
@@ -96,7 +101,7 @@ func (uh *userHandler) handleEvents() {
 	wdDone := make(chan bool)
 	go func() {
 		<-uh.done
-		uh.active = false
+		uh.isActive = false
 		delete(userHandlers, uh.user.ID)
 		close(uh.events)
 		close(uh.done)
@@ -104,15 +109,15 @@ func (uh *userHandler) handleEvents() {
 		log.Debugw("handleEvents cleanup", "username", uh.user.UserName)
 	}()
 	for event := range uh.events {
-		if uh.expectedID == event.id {
+		if uh.isValidEvent(event) {
 			if event.value == "exit" {
 				uh.send(tgbotapi.NewMessage(uh.chatID, "Bye Bye!"))
 				uh.done <- true
 				break
 			}
-			uh.requestData[uh.expectedField] = event.value
+			uh.requestData[uh.nextField] = event.value
 			nextMessage := uh.getNextMessage()
-			if uh.expectedField == "receipt" {
+			if uh.nextField == "receipt" {
 				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
 				receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
 				if err != nil {
@@ -125,7 +130,7 @@ func (uh *userHandler) handleEvents() {
 					go webdriver.CancelPrevAppointment(uh.requestData)
 				}
 			}
-			if uh.expectedField == "booth" {
+			if uh.nextField == "booth" {
 				boothes, err := webdriver.GetBoothes(uh.requestData)
 				if err != nil {
 					log.Errorw("GetBoothes", "error", err)
@@ -140,9 +145,10 @@ func (uh *userHandler) handleEvents() {
 			}
 			msg, _ := uh.send(nextMessage)
 			log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
-			uh.expectedID = msg.MessageID
-			if nextMessage.ReplyMarkup == nil {
-				uh.expectedID++
+			uh.nextType = plainText
+			if nextMessage.ReplyMarkup != nil {
+				uh.nextID = msg.MessageID
+				uh.nextType = callbackQuery
 			}
 		}
 	}
@@ -158,14 +164,21 @@ func (uh *userHandler) getNextMessage() tgbotapi.MessageConfig {
 	if reply.isMarkup {
 		message.ReplyMarkup = reply.markup
 	}
-	uh.expectedField = reply.field
+	uh.nextField = reply.field
 	uh.replyID++
 	return message
 }
 
 func (uh *userHandler) send(message tgbotapi.MessageConfig) (tgbotapi.Message, error) {
-	if uh.active {
+	if uh.isActive {
 		return uh.bot.Send(message)
 	}
 	return tgbotapi.Message{}, nil
+}
+
+func (uh *userHandler) isValidEvent(e *event) bool {
+	if e.uType == plainText {
+		return e.uType == uh.nextType
+	}
+	return e.uType == uh.nextType && e.id == uh.nextID
 }
