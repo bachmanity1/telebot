@@ -29,7 +29,8 @@ func InitDriver(config *viper.Viper) {
 	host := config.GetString("driver_host")
 	port := config.GetString("driver_port")
 	apiPrefix := config.GetString("driver_api_prefix")
-	driverURL = fmt.Sprintf("http://%s:%s/%s", host, port, apiPrefix)
+	driverURL = fmt.Sprintf("http://%s:%s%s", host, port, apiPrefix)
+	log.Infow("InitDriver", "driverURL", driverURL)
 }
 
 func login(data map[string]string) (wd sm.WebDriver, err error) {
@@ -79,12 +80,19 @@ func login(data map[string]string) (wd sm.WebDriver, err error) {
 	return wd, nil
 }
 
-func MakeAppointment(data map[string]string) (receipt string, err error) {
+func MakeAppointment(data map[string]string, done chan bool) (receipt string, err error) {
 	wd, err := login(data)
 	if err != nil {
 		return "", err
 	}
 	defer wd.Quit()
+	go func() {
+		<-done
+		if wd != nil {
+			log.Debugw("MakeAppointment", "remove zombie process", wd.SessionID())
+			wd.Quit()
+		}
+	}()
 	elem, err := wd.FindElement(sm.ByXPATH, "//a[contains(@href, 'resv') and @class='btn_apply']")
 	if err != nil {
 		return "", err

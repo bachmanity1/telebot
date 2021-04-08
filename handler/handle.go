@@ -39,8 +39,8 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 		if update.Message.Command() == "start" {
 			uh, ok := userHandlers[user.ID]
 			if ok {
-				delete(userHandlers, user.ID)
-				close(uh.events)
+				uh.done <- true
+				<-uh.events
 			}
 			uh = &userHandler{
 				user:        user,
@@ -49,6 +49,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 				events:      make(chan *event, 100),
 				requestData: make(map[string]string),
 				expectedID:  messageID,
+				done:        make(chan bool),
 			}
 			go uh.handleEvents()
 			userHandlers[user.ID] = uh
@@ -65,7 +66,7 @@ func (h *Handler) HandleUpdate(update tgbotapi.Update) {
 	log.Debugw("Received message", "username", user.UserName, "text", text, "messageID", messageID)
 	uh, ok := userHandlers[user.ID]
 	if !ok {
-		h.bot.Send(tgbotapi.NewMessage(chatID, "type /start to make an appointment"))
+		h.bot.Send(tgbotapi.NewMessage(chatID, "Type /start to make an appointment"))
 		return
 	}
 	uh.events <- &event{text, messageID}
@@ -80,6 +81,7 @@ type userHandler struct {
 	expectedID    int
 	expectedField string
 	replyID       int
+	done          chan bool
 }
 
 type event struct {
@@ -89,6 +91,14 @@ type event struct {
 
 func (uh *userHandler) handleEvents() {
 	defer util.Recover(log)
+	wdDone := make(chan bool)
+	go func() {
+		<-uh.done
+		close(wdDone)
+		delete(userHandlers, uh.user.ID)
+		close(uh.events)
+		log.Debugw("handleEvents cleanup done", "username", uh.user.UserName)
+	}()
 	for event := range uh.events {
 		if uh.expectedID == event.id {
 			if event.value == "exit" {
@@ -98,8 +108,8 @@ func (uh *userHandler) handleEvents() {
 			uh.requestData[uh.expectedField] = event.value
 			nextMessage := uh.getNextMessage()
 			if uh.expectedField == "receipt" {
-				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Search may take some time, please wait"))
-				receipt, err := webdriver.MakeAppointment(uh.requestData)
+				uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
+				receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
 				if err != nil {
 					log.Errorw("Make Appointment", "error", err)
 					uh.bot.Send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
@@ -131,6 +141,7 @@ func (uh *userHandler) handleEvents() {
 			}
 		}
 	}
+	log.Debugw("handleUpdate exit", "username", uh.user.UserName)
 }
 
 func (uh *userHandler) getNextMessage() tgbotapi.MessageConfig {

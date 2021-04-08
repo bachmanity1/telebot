@@ -6,7 +6,7 @@ services:
       #APITOKEN: 'YOUR_TELEGRAM_API_TOKEN'
       DRIVER_HOST: driver
       DRIVER_PORT: 4444
-      DRIVER_API_PREFIX: wd/hub
+      DRIVER_API_PREFIX: /wd/hub
     restart: on-failure
   driver:
     image: selenium/standalone-chrome
