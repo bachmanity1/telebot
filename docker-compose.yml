@@ -8,3 +8,5 @@ services:
       DRIVER_API_PREFIX: wd/hub
   driver:
     image: selenium/standalone-chrome
+    environment:
+      START_XVFB: false

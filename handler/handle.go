@@ -88,6 +88,7 @@ type event struct {
 }
 
 func (uh *userHandler) handleEvents() {
+	defer util.Recover(log)
 	for event := range uh.events {
 		if uh.expectedID == event.id {
 			if event.value == "exit" {

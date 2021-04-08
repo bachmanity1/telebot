@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"telebot/handler"
 	"telebot/util"
 	"telebot/webdriver"
@@ -10,16 +9,17 @@ import (
 )
 
 func main() {
-	logger := util.InitLog("main")
+	log := util.InitLog("main")
 	config := util.InitConfig()
-	webdriver.InitDriver(config)
 
 	bot, err := tgbotapi.NewBotAPI(config.GetString("apitoken"))
 	if err != nil {
-		logger.Panic(err)
+		log.Panic(err)
 	}
-	logger.Debugw("Authorized", "accountname", bot.Self.UserName)
+	log.Debugw("Authorized", "accountname", bot.Self.UserName)
 
+	defer util.Recover(log)
+	webdriver.InitDriver(config)
 	h := handler.NewHandler(bot)
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

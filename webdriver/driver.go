@@ -43,6 +43,8 @@ func login(data map[string]string) (wd sm.WebDriver, err error) {
 			"--headless",
 			"--no-sandbox",
 			"--disable-extensions",
+			"--disable-gpu",
+			"--shm-size=2g",
 		},
 	}
 	caps.AddChrome(chromeCaps)
