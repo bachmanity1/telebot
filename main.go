@@ -10,20 +10,23 @@ import (
 
 func main() {
 	log := util.InitLog("main")
+	defer util.Recover(log)
 	config := util.InitConfig()
 
+	// init booth data
+	if err := webdriver.InitData(config); err != nil {
+		log.Panicw("InitData", "error", err)
+	}
+
+	// init bot
 	bot, err := tgbotapi.NewBotAPI(config.GetString("apitoken"))
 	if err != nil {
-		log.Panic(err)
+		log.Panicw("InitBot", "error", err)
 	}
 	log.Debugw("Authorized", "accountname", bot.Self.UserName)
-
-	defer util.Recover(log)
-	webdriver.InitDriver(config)
 	h := handler.NewHandler(bot)
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		log.Panic(err)
