@@ -14,10 +14,11 @@ func main() {
 	config := util.InitConfig()
 
 	// init booth data
-	if err := handler.InitData(config); err != nil {
-		log.Panicw("InitData", "error", err)
-	}
+	// if err := handler.InitData(config); err != nil {
+	// log.Panicw("InitData", "error", err)
+	// }
 	scraper.InitRequest()
+	scraper.MakeAppointment(nil)
 
 	// init bot
 	bot, err := tgbotapi.NewBotAPI(config.GetString("apitoken"))

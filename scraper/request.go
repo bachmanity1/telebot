@@ -3,6 +3,7 @@ package scraper
 import (
 	"crypto/tls"
 	"fmt"
+	"telebot/util"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -11,6 +12,7 @@ import (
 var client *resty.Client
 
 func InitRequest() {
+	log = util.InitLog("scraper")
 	client = resty.New()
 	client.SetDebug(true)
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
@@ -37,7 +39,21 @@ func InitRequest() {
 }
 
 func MakeAppointment(requestData map[string]string) (receipt string, err error) {
-	resp, err := client.R().
+	from := time.Now()
+	to := from.Add(10 * time.Minute)
+	resvDt := from.Format("20060102")
+	x := from.Format("1504")
+	y := to.Format("1504")
+	resvTime1 := fmt.Sprintf("%s_%s", x, y)
+	x = from.Format("2006-01-02 15:04")
+	y = to.Format("15:04")
+	resvYmd := fmt.Sprintf("%s~%s", x, y)
+	log.Debugw("MakeAppointment", "resvDt", resvDt, "resvTime1", resvTime1, "resvYmd", resvYmd)
+	return "", nil
+}
+
+func sendRequest() error {
+	_, err := client.R().
 		SetFormData(map[string]string{
 			"userId":          "hikorea_2",
 			"operDeskCnt":     "7",
@@ -57,8 +73,7 @@ func MakeAppointment(requestData map[string]string) (receipt string, err error) 
 		}).Post("https://www.hikorea.go.kr/resv/ResvC.pt")
 	if err != nil {
 		log.Debugw("MakeAppointment", "error", err)
-		return "", err
+		return err
 	}
-	fmt.Println(resp.RawBody())
-	return "", nil
+	return nil
 }
