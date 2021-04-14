@@ -2,10 +2,13 @@ package webdriver
 
 import (
 	"fmt"
+	"telebot/handler"
 	"telebot/util"
+	"time"
 
 	"github.com/spf13/viper"
 	sm "github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 	"go.uber.org/zap"
 )
 
@@ -24,26 +27,26 @@ func InitData(config *viper.Viper) error {
 	caps := sm.Capabilities{
 		"browserName": "chrome",
 	}
-	// chromeCaps := chrome.Capabilities{
-	// 	Path: "",
-	// 	Args: []string{
-	// 		"--headless",
-	// 		"--window-size=1920,1080",
-	// 		"--no-sandbox",
-	// 		"--disable-extensions",
-	// 		"--disable-gpu",
-	// 		"--dns-prefetch-disable",
-	// 		"--shm-size=2g",
-	// 	},
-	// }
-	// caps.AddChrome(chromeCaps)
+	chromeCaps := chrome.Capabilities{
+		Path: "",
+		Args: []string{
+			"--headless",
+			"--window-size=1920,1080",
+			"--no-sandbox",
+			"--disable-extensions",
+			"--disable-gpu",
+			"--dns-prefetch-disable",
+			"--shm-size=2g",
+		},
+	}
+	caps.AddChrome(chromeCaps)
 	wd, err := sm.NewRemote(caps, driverURL)
 	if err != nil {
 		return err
 	}
 	defer wd.Quit()
-	// wd.SetPageLoadTimeout(2 * time.Second)
-	// wd.SetImplicitWaitTimeout(2 * time.Second)
+	wd.SetPageLoadTimeout(2 * time.Second)
+	wd.SetImplicitWaitTimeout(2 * time.Second)
 
 	userID := config.GetString("hikorea_user_id")
 	userPasswd := config.GetString("hikorea_user_passwd")
@@ -51,10 +54,7 @@ func InitData(config *viper.Viper) error {
 	if err != nil {
 		return err
 	}
-	for branch, boothz := range boothes {
-		log.Debugw("InitData", "branch", branch, "boothes", boothz)
-	}
-	// handler.MakeBoothKeyboard(boothes)
+	handler.MakeBoothMarkup(boothes)
 	return nil
 }
 
@@ -121,6 +121,7 @@ func getBoothes(wd sm.WebDriver, userID, userPasswd string) (map[string][]string
 			boothz = append(boothz, key, value)
 		}
 		boothes[branchName] = boothz
+		log.Debugw("getBoothes", "branch", branch, "boothes", boothz)
 	}
 	return boothes, nil
 }

@@ -63,6 +63,14 @@ var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	),
 )
 
+var boothMarkup map[string]tgbotapi.InlineKeyboardMarkup
+
+func MakeBoothMarkup(boothes map[string][]string) {
+	for branch, boothz := range boothes {
+		boothMarkup[branch] = makeBoothMarkup(boothz)
+	}
+}
+
 func makeBoothMarkup(boothes []string) tgbotapi.InlineKeyboardMarkup {
 	if len(boothes)%2 != 0 {
 		return tgbotapi.InlineKeyboardMarkup{}
@@ -94,8 +102,7 @@ type reply struct {
 }
 
 var replies = []reply{
-	{field: "username", text: "Enter your username", isMarkup: false},
-	{field: "password", text: "Enter your password", isMarkup: false},
+	{field: "name", text: "Enter your full name (EXACTLY as it appears in your ARC)", isMarkup: false},
 	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branchMarkup},
 	{field: "booth", text: "Choose Booth Category", isMarkup: true},
 	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},

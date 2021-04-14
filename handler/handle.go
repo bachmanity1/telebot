@@ -115,40 +115,40 @@ func (uh *userHandler) handleEvents() {
 				break
 			}
 			uh.requestData[uh.nextField] = event.value
-			// nextMessage := uh.getNextMessage()
-			// if uh.nextField == "receipt" {
-			// 	uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
-			// 	receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
-			// 	if err != nil {
-			// 		log.Errorw("Make Appointment", "error", err)
-			// 		uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
-			// 		uh.replyID = 0
-			// 		nextMessage = uh.getNextMessage()
-			// 	} else {
-			// 		nextMessage.Text = receipt
-			// 		go webdriver.CancelPrevAppointment(uh.requestData)
-			// 	}
-			// }
-			// if uh.nextField == "booth" {
-			// 	boothes, err := webdriver.GetBoothes(uh.requestData)
-			// 	if err != nil {
-			// 		log.Errorw("GetBoothes", "error", err)
-			// 	}
-			// 	if err != nil {
-			// 		uh.send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
-			// 		uh.replyID = 0
-			// 		nextMessage = uh.getNextMessage()
-			// 	} else {
-			// 		nextMessage.ReplyMarkup = makeBoothMarkup(boothes)
-			// 	}
-			// }
-			// msg, _ := uh.send(nextMessage)
-			// log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
-			// uh.nextType = plainText
-			// if nextMessage.ReplyMarkup != nil {
-			// 	uh.nextID = msg.MessageID
-			// 	uh.nextType = callbackQuery
-			// }
+			nextMessage := uh.getNextMessage()
+			if uh.nextField == "receipt" {
+				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
+				receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
+				if err != nil {
+					log.Errorw("Make Appointment", "error", err)
+					uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
+					uh.replyID = 0
+					nextMessage = uh.getNextMessage()
+				} else {
+					nextMessage.Text = receipt
+					go webdriver.CancelPrevAppointment(uh.requestData)
+				}
+			}
+			if uh.nextField == "booth" {
+				boothes, err := webdriver.GetBoothes(uh.requestData)
+				if err != nil {
+					log.Errorw("GetBoothes", "error", err)
+				}
+				if err != nil {
+					uh.send(tgbotapi.NewMessage(uh.chatID, "Wrong username or password, please retry"))
+					uh.replyID = 0
+					nextMessage = uh.getNextMessage()
+				} else {
+					nextMessage.ReplyMarkup = makeBoothMarkup(boothes)
+				}
+			}
+			msg, _ := uh.send(nextMessage)
+			log.Debugw("Send Message", "text", msg.Text, "messageID", msg.MessageID)
+			uh.nextType = plainText
+			if nextMessage.ReplyMarkup != nil {
+				uh.nextID = msg.MessageID
+				uh.nextType = callbackQuery
+			}
 		}
 	}
 	log.Debugw("handleEvents exit", "username", uh.user.UserName)
