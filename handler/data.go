@@ -66,6 +66,7 @@ var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 var boothMarkup map[string]tgbotapi.InlineKeyboardMarkup
 
 func MakeBoothMarkup(boothes map[string][]string) {
+	boothMarkup = make(map[string]tgbotapi.InlineKeyboardMarkup)
 	for branch, boothz := range boothes {
 		boothMarkup[branch] = makeBoothMarkup(boothz)
 	}
@@ -107,7 +108,7 @@ var replies = []reply{
 	{field: "booth", text: "Choose Booth Category", isMarkup: true},
 	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},
 	{field: "phone", text: "Enter your phone number (optional)", isMarkup: false},
-	{field: "receipt", text: "Receeipt", isMarkup: true, markup: receiptMarkup},
+	{field: "receipt", text: "Receipt PlaceHolder", isMarkup: true, markup: receiptMarkup},
 }
 
 type updateType int
