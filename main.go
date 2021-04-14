@@ -2,8 +2,8 @@ package main
 
 import (
 	"telebot/handler"
+	"telebot/scraper"
 	"telebot/util"
-	"telebot/webdriver"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -14,7 +14,7 @@ func main() {
 	config := util.InitConfig()
 
 	// init booth data
-	if err := webdriver.InitData(config); err != nil {
+	if err := scraper.InitData(config); err != nil {
 		log.Panicw("InitData", "error", err)
 	}
 

@@ -1,4 +1,4 @@
-package webdriver
+package scraper
 
 import (
 	"reflect"

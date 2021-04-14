@@ -59,7 +59,7 @@ var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Good Enough!", "exit"),
 	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Look for an earlier date", "2"),
+		tgbotapi.NewInlineKeyboardButtonData("Look for an earlier date", "continue"),
 	),
 )
 
