@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"telebot/scraper"
 	"telebot/util"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -118,16 +119,15 @@ func (uh *userHandler) handleEvents() {
 			nextMessage := uh.getNextMessage()
 			if uh.nextField == "receipt" {
 				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
-				// receipt, err := webdriver.MakeAppointment(uh.requestData, wdDone)
-				// if err != nil {
-				// 	log.Errorw("Make Appointment", "error", err)
-				// 	uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
-				// 	uh.replyID = 0
-				// 	nextMessage = uh.getNextMessage()
-				// } else {
-				// 	nextMessage.Text = receipt
-				// 	go webdriver.CancelPrevAppointment(uh.requestData)
-				// }
+				receipt, err := scraper.MakeAppointment(uh.requestData)
+				if err != nil {
+					log.Errorw("Make Appointment", "error", err)
+					uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
+					uh.replyID = 0
+					nextMessage = uh.getNextMessage()
+				} else {
+					nextMessage.Text = receipt
+				}
 			}
 			if uh.nextField == "booth" {
 				nextMessage.ReplyMarkup = boothMarkup[uh.requestData["branch"]]

@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"fmt"
-	"telebot/handler"
 	"telebot/util"
 	"time"
 
@@ -16,7 +15,7 @@ const baseURL = "https://www.hikorea.go.kr/memb/MembLoginR.pt"
 
 var log *zap.SugaredLogger
 
-func InitData(config *viper.Viper) error {
+func GetBoothes(config *viper.Viper) (map[string][]string, error) {
 	log = util.InitLog("driver")
 	host := config.GetString("driver_host")
 	port := config.GetString("driver_port")
@@ -42,7 +41,7 @@ func InitData(config *viper.Viper) error {
 	caps.AddChrome(chromeCaps)
 	wd, err := sm.NewRemote(caps, driverURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer wd.Quit()
 	wd.SetPageLoadTimeout(2 * time.Second)
@@ -50,15 +49,7 @@ func InitData(config *viper.Viper) error {
 
 	userID := config.GetString("hikorea_user_id")
 	userPasswd := config.GetString("hikorea_user_passwd")
-	boothes, err := getBoothes(wd, userID, userPasswd)
-	if err != nil {
-		return err
-	}
-	handler.MakeBoothMarkup(boothes)
-	return nil
-}
 
-func getBoothes(wd sm.WebDriver, userID, userPasswd string) (map[string][]string, error) {
 	boothes := make(map[string][]string)
 	if err := wd.Get(baseURL); err != nil {
 		return nil, err
