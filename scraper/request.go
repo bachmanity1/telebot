@@ -19,6 +19,7 @@ const (
 	workdayLength    = 9 * time.Hour
 	slotLength       = 10 * time.Minute
 	windowLength     = 30 * 24 * time.Hour
+	coronaTime       = 50
 )
 
 var client *resty.Client
@@ -67,6 +68,7 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 				startTime, endTime := startDate, startDate.Add(workdayLength)
 				for startTime.Before(endTime) {
 					from, to := startTime, startTime.Add(slotLength)
+					startTime = to
 					req["resvDt"] = from.Format("20060102")
 					x := from.Format("1504")
 					y := to.Format("1504")
@@ -74,11 +76,13 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 					x = from.Format("2006-01-02 15:04")
 					y = to.Format("15:04")
 					req["resvYmd"] = fmt.Sprintf("%s~%s", x, y)
+					if from.Minute() == coronaTime {
+						continue
+					}
 					if ok := sendRequest(req); ok {
 						log.Debugw("MakeAppointment Success", "date", req["resvYmd"])
 						return true
 					}
-					startTime = to
 				}
 				startDate = startDate.Add(dayLength)
 			}
