@@ -39,16 +39,23 @@ func InitRequest() {
 }
 
 func MakeAppointment(requestData map[string]string) (receipt string, err error) {
-	from := time.Now()
-	to := from.Add(10 * time.Minute)
-	resvDt := from.Format("20060102")
-	x := from.Format("1504")
-	y := to.Format("1504")
-	resvTime1 := fmt.Sprintf("%s_%s", x, y)
-	x = from.Format("2006-01-02 15:04")
-	y = to.Format("15:04")
-	resvYmd := fmt.Sprintf("%s~%s", x, y)
-	log.Debugw("MakeAppointment", "resvDt", resvDt, "resvTime1", resvTime1, "resvYmd", resvYmd)
+	minDate, maxDate := getMinMaxDate()
+	for minDate.Before(maxDate) {
+		startTime, endTime := minDate, minDate.Add(9*time.Hour)
+		for startTime.Before(endTime) {
+			from, to := startTime, startTime.Add(10*time.Minute)
+			resvDt := from.Format("20060102")
+			x := from.Format("1504")
+			y := to.Format("1504")
+			resvTime1 := fmt.Sprintf("%s_%s", x, y)
+			x = from.Format("2006-01-02 15:04")
+			y = to.Format("15:04")
+			resvYmd := fmt.Sprintf("%s~%s", x, y)
+			log.Debugw("MakeAppointment", "resvDt", resvDt, "resvTime1", resvTime1, "resvYmd", resvYmd)
+			startTime = to
+		}
+		minDate = minDate.Add(24 * time.Hour)
+	}
 	return "", nil
 }
 
@@ -76,4 +83,13 @@ func sendRequest() error {
 		return err
 	}
 	return nil
+}
+
+func getMinMaxDate() (time.Time, time.Time) {
+	now := time.Now()
+	layout := "2006-01-02"
+	minDate, _ := time.Parse(layout, now.Format(layout))
+	minDate = minDate.Add(9 * time.Hour)
+	maxDate := minDate.Add(31 * 24 * time.Hour)
+	return minDate, maxDate
 }
