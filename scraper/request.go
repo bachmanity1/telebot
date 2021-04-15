@@ -47,7 +47,6 @@ func InitRequest() {
 		"Referer":                   "https://www.hikorea.go.kr/resv/ResvIdntC.pt",
 		"Accept-Encoding":           "gzip, deflate, br",
 		"Accept-Language":           "en-US,en;q=0.9",
-		"Cookie":                    "WMONID=ZYMMcIU8ZWG; JSESSIONID=uo2ad0fiar7f6hJz47bEaMnWlGnYc1JrBAS1beKiyoVbaYYeJ1x9APDd4GgLvRGh.amV1c19kb21haW4vaGlrb3JlYS1lZ292MQ==",
 	})
 }
 
@@ -96,8 +95,6 @@ func sendRequest(req map[string]string) bool {
 	response, err := client.R().
 		SetFormData(map[string]string{
 			"userId":          "hikorea_2",
-			"operDeskCnt":     "7",
-			"targetSeq":       "39",
 			"resvDt":          req["resvDt"],
 			"selBusiTypeList": "F01",
 			"orgnCd":          req["branch"],
