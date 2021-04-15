@@ -98,14 +98,14 @@ type event struct {
 
 func (uh *userHandler) handleEvents() {
 	defer util.Recover(log)
-	wdDone := make(chan bool)
+	done := make(chan bool)
 	go func() {
 		<-uh.done
 		uh.isActive = false
 		delete(userHandlers, uh.user.ID)
 		close(uh.events)
 		close(uh.done)
-		close(wdDone)
+		close(done)
 		log.Debugw("handleEvents cleanup", "username", uh.user.UserName)
 	}()
 	for event := range uh.events {
@@ -118,16 +118,12 @@ func (uh *userHandler) handleEvents() {
 			uh.requestData[uh.nextField] = event.value
 			nextMessage := uh.getNextMessage()
 			if uh.nextField == "receipt" {
-				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take some time(potentially hours!), we'll send you a message as soon as we have an update for you"))
-				receipt, err := scraper.MakeAppointment(uh.requestData)
-				if err != nil {
-					log.Errorw("Make Appointment", "error", err)
-					uh.send(tgbotapi.NewMessage(uh.chatID, "Something went wrong (probably unavailable booth), please retry"))
-					uh.replyID = 0
-					nextMessage = uh.getNextMessage()
-				} else {
-					nextMessage.Text = receipt
+				uh.send(tgbotapi.NewMessage(uh.chatID, "Search may take quite some time, we'll send you a message as soon as we have an update for you!"))
+				sanitizeData(uh.requestData)
+				if ok := scraper.MakeAppointment(uh.requestData, done); ok {
+					nextMessage.Text = makeReceipt(uh.requestData)
 				}
+
 			}
 			if uh.nextField == "booth" {
 				nextMessage.ReplyMarkup = boothMarkup[uh.requestData["branch"]]

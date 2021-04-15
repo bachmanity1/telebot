@@ -3,10 +3,22 @@ package scraper
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"strings"
 	"telebot/util"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/jpillora/backoff"
+)
+
+const (
+	successMessage   = "방문예약신청완료"
+	workdayStartTime = 9 * time.Hour
+	dayLength        = 24 * time.Hour
+	workdayLength    = 9 * time.Hour
+	slotLength       = 10 * time.Minute
+	windowLength     = 30 * 24 * time.Hour
 )
 
 var client *resty.Client
@@ -38,58 +50,77 @@ func InitRequest() {
 	})
 }
 
-func MakeAppointment(requestData map[string]string) (receipt string, err error) {
-	minDate, maxDate := getMinMaxDate()
-	for minDate.Before(maxDate) {
-		startTime, endTime := minDate, minDate.Add(9*time.Hour)
-		for startTime.Before(endTime) {
-			from, to := startTime, startTime.Add(10*time.Minute)
-			resvDt := from.Format("20060102")
-			x := from.Format("1504")
-			y := to.Format("1504")
-			resvTime1 := fmt.Sprintf("%s_%s", x, y)
-			x = from.Format("2006-01-02 15:04")
-			y = to.Format("15:04")
-			resvYmd := fmt.Sprintf("%s~%s", x, y)
-			log.Debugw("MakeAppointment", "resvDt", resvDt, "resvTime1", resvTime1, "resvYmd", resvYmd)
-			startTime = to
-		}
-		minDate = minDate.Add(24 * time.Hour)
+func MakeAppointment(req map[string]string, done chan bool) bool {
+	b := &backoff.Backoff{
+		Min:    1 * time.Minute,
+		Max:    1 * time.Hour,
+		Factor: 2,
+		Jitter: true,
 	}
-	return "", nil
+	for {
+		select {
+		case <-done:
+			return false
+		default:
+			startDate, endDate := getDateWindow()
+			for startDate.Before(endDate) {
+				startTime, endTime := startDate, startDate.Add(workdayLength)
+				for startTime.Before(endTime) {
+					from, to := startTime, startTime.Add(slotLength)
+					req["resvDt"] = from.Format("20060102")
+					x := from.Format("1504")
+					y := to.Format("1504")
+					req["resvTime1"] = fmt.Sprintf("%s_%s", x, y)
+					x = from.Format("2006-01-02 15:04")
+					y = to.Format("15:04")
+					req["resvYmd"] = fmt.Sprintf("%s~%s", x, y)
+					if ok := sendRequest(req); ok {
+						log.Debugw("MakeAppointment Success", "date", req["resvYmd"])
+						return true
+					}
+					startTime = to
+				}
+				startDate = startDate.Add(dayLength)
+			}
+			time.Sleep(b.Duration())
+		}
+	}
 }
 
-func sendRequest() error {
-	_, err := client.R().
+func sendRequest(req map[string]string) bool {
+	response, err := client.R().
 		SetFormData(map[string]string{
 			"userId":          "hikorea_2",
 			"operDeskCnt":     "7",
 			"targetSeq":       "39",
-			"resvDt":          "20210430",
-			"selBusiTypeList": "F01",
-			"orgnCd":          "1270667",
-			"deskSeq":         "702",
+			"resvDt":          req["resvDt"],
+			"selBusiTypeList": req["purpose"],
+			"orgnCd":          req["branch"],
+			"deskSeq":         req["booth"],
 			"visiPurp":        "AA",
-			"resvTime1":       "1540_1550",
-			"resvNm":          "Nelson Bighetti",
-			"selBusiType1_1":  "F01",
+			"resvTime1":       req["resvTime1"],
+			"resvNm":          req["name"],
+			"selBusiType1_1":  req["purpose"],
+			"mobileTelNo1":    req["phone1"],
+			"mobileTelNo2":    req["phone2"],
+			"mobileTelNo3":    req["phone3"],
 			"resvPasswd":      "1111",
-			"resvYmd":         "2021-04-30 15:40~15:50",
-			"visiPurpTxt":     "",
+			"resvYmd":         req["resvYmd"],
 			"TRAN_TYPE":       "ComSubmit",
 		}).Post("https://www.hikorea.go.kr/resv/ResvC.pt")
-	if err != nil {
+	if err != nil || response.StatusCode() != http.StatusOK {
 		log.Debugw("MakeAppointment", "error", err)
-		return err
+		return false
 	}
-	return nil
+	body := string(response.Body())
+	return strings.Contains(body, successMessage)
 }
 
-func getMinMaxDate() (time.Time, time.Time) {
+func getDateWindow() (time.Time, time.Time) {
 	now := time.Now()
 	layout := "2006-01-02"
-	minDate, _ := time.Parse(layout, now.Format(layout))
-	minDate = minDate.Add(9 * time.Hour)
-	maxDate := minDate.Add(31 * 24 * time.Hour)
-	return minDate, maxDate
+	startDate, _ := time.Parse(layout, now.Format(layout))
+	startDate = startDate.Add(workdayStartTime)
+	endDate := startDate.Add(windowLength)
+	return startDate, endDate
 }

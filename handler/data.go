@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"strings"
 	"telebot/scraper"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -8,6 +10,13 @@ import (
 )
 
 const maxButtonLength = 40
+
+type updateType int
+
+const (
+	plainText = updateType(iota)
+	callbackQuery
+)
 
 type reply struct {
 	field    string
@@ -25,14 +34,54 @@ var replies = []reply{
 	{field: "receipt", text: "Receipt PlaceHolder", isMarkup: true, markup: receiptMarkup},
 }
 
-type updateType int
+func sanitizeData(data map[string]string) {
+	data["name"] = strings.ToUpper(data["name"])
+	phone := getPhoneNumber(data["phone"])
+	for i, val := range phone {
+		key := fmt.Sprintf("phone%d", i)
+		data[key] = val
+	}
+}
 
-const (
-	plainText = updateType(iota)
-	callbackQuery
+func getPhoneNumber(input string) []string {
+	n := 3
+	number := make([]string, 0)
+	temp := make([]byte, 0)
+	for i := 0; i < len(input); i++ {
+		if input[i] >= '0' && input[i] <= '9' {
+			temp = append(temp, input[i])
+			if len(temp) == n {
+				number = append(number, string(temp))
+				temp = make([]byte, 0)
+				n = 4
+			}
+		} else if input[i] == '-' {
+			continue
+		} else {
+			return nil
+		}
+	}
+	if len(temp) != 0 || len(number) != 3 {
+		return nil
+	}
+	return number
+}
+
+func makeReceipt(data map[string]string) string {
+	name := data["name"]
+	branch := branchMap[data["branch"]]
+	booth := boothMap[data["booth"]]
+	date := data["resvYmd"]
+	receipt := fmt.Sprintf("Successfully made an reservation!\n\n"+
+		"Name: %s\nBranch: %s\nBooth: %s\nDate: %s\n\n",
+		name, branch, booth, date)
+	return receipt
+}
+
+var (
+	boothMarkup map[string]tgbotapi.InlineKeyboardMarkup
+	boothMap    map[string]string
 )
-
-var boothMarkup map[string]tgbotapi.InlineKeyboardMarkup
 
 var branchMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
@@ -60,6 +109,17 @@ var branchMarkup = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardButtonData("Daejeon Immigration Office", "1270727"),
 	),
 )
+
+var branchMap = map[string]string{
+	"1270667": "Seoul Immigration Office",
+	"1271020": "Sejongno Branch Office",
+	"1270700": "Incheon Immigration Office",
+	"1272143": "Incheon Immigration Office Ansan Branch Office",
+	"1270947": "Suwon Immigration Office",
+	"1270698": "Ulsan  Immigration Office",
+	"1270686": "Busan Immigration Office",
+	"1270727": "Daejeon Immigration Office",
+}
 
 var purposeMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
@@ -89,12 +149,13 @@ var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Good Enough!", "exit"),
 	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Look for an earlier date", "continue"),
+		tgbotapi.NewInlineKeyboardButtonData("Look for an earlier date!", "continue"),
 	),
 )
 
 func makeBoothesMarkup(boothes map[string][]string) {
 	boothMarkup = make(map[string]tgbotapi.InlineKeyboardMarkup)
+	boothMap = make(map[string]string)
 	for branch, boothz := range boothes {
 		boothMarkup[branch] = makeBoothMarkup(boothz)
 	}
@@ -108,6 +169,7 @@ func makeBoothMarkup(boothz []string) tgbotapi.InlineKeyboardMarkup {
 	for i := 0; i < len(boothz); i += 2 {
 		key := boothz[i]
 		val := boothz[i+1]
+		boothMap[key] = val
 		button := tgbotapi.NewInlineKeyboardButtonData(shorten(val), key)
 		row := tgbotapi.NewInlineKeyboardRow(button)
 		rows = append(rows, row)
