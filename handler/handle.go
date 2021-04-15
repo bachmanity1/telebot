@@ -123,7 +123,6 @@ func (uh *userHandler) handleEvents() {
 				if ok := scraper.MakeAppointment(uh.requestData, done); ok {
 					nextMessage.Text = makeReceipt(uh.requestData)
 				}
-
 			}
 			if uh.nextField == "booth" {
 				nextMessage.ReplyMarkup = boothMarkup[uh.requestData["branch"]]

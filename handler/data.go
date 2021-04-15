@@ -29,7 +29,7 @@ var replies = []reply{
 	{field: "name", text: "Enter your full name (EXACTLY as it appears in your ARC)", isMarkup: false},
 	{field: "branch", text: "Choose Immigration Branch", isMarkup: true, markup: branchMarkup},
 	{field: "booth", text: "Choose Booth Category", isMarkup: true},
-	{field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},
+	// {field: "purpose", text: "Choose purpose of visit", isMarkup: true, markup: purposeMarkup},
 	{field: "phone", text: "Enter your phone number (optional)", isMarkup: false},
 	{field: "receipt", text: "Receipt PlaceHolder", isMarkup: true, markup: receiptMarkup},
 }
@@ -121,29 +121,29 @@ var branchMap = map[string]string{
 	"1270727": "Daejeon Immigration Office",
 }
 
-var purposeMarkup = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Foreign Resident Registration", "F01"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Reissue of Alien Registration Card", "F02"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Visa extension", "F03"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Change of visa status", "F04"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Granting a visa", "F05"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Permit for other activities beyond current visa status", "F06"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Change/addition of workplace", "F07"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Re-entry permit (single/multiple)", "F08"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Change of residence", "F09"),
-	), tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Change of Registration Matters (Passport Information)", "F10"),
-	),
-)
+// var purposeMarkup = tgbotapi.NewInlineKeyboardMarkup(
+// 	tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Foreign Resident Registration", "F01"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Reissue of Alien Registration Card", "F02"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Visa extension", "F03"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Change of visa status", "F04"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Granting a visa", "F05"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Permit for other activities beyond current visa status", "F06"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Change/addition of workplace", "F07"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Re-entry permit (single/multiple)", "F08"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Change of residence", "F09"),
+// 	), tgbotapi.NewInlineKeyboardRow(
+// 		tgbotapi.NewInlineKeyboardButtonData("Change of Registration Matters (Passport Information)", "F10"),
+// 	),
+// )
 
 var receiptMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(

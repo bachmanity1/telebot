@@ -94,13 +94,13 @@ func sendRequest(req map[string]string) bool {
 			"operDeskCnt":     "7",
 			"targetSeq":       "39",
 			"resvDt":          req["resvDt"],
-			"selBusiTypeList": req["purpose"],
+			"selBusiTypeList": "F01",
 			"orgnCd":          req["branch"],
 			"deskSeq":         req["booth"],
 			"visiPurp":        "AA",
 			"resvTime1":       req["resvTime1"],
 			"resvNm":          req["name"],
-			"selBusiType1_1":  req["purpose"],
+			"selBusiType1_1":  "F01",
 			"mobileTelNo1":    req["phone1"],
 			"mobileTelNo2":    req["phone2"],
 			"mobileTelNo3":    req["phone3"],
@@ -117,7 +117,7 @@ func sendRequest(req map[string]string) bool {
 }
 
 func getDateWindow() (time.Time, time.Time) {
-	now := time.Now()
+	now := time.Now().Add(dayLength)
 	layout := "2006-01-02"
 	startDate, _ := time.Parse(layout, now.Format(layout))
 	startDate = startDate.Add(workdayStartTime)

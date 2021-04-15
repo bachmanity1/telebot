@@ -102,17 +102,21 @@ func GetBoothes(config *viper.Viper) (map[string][]string, error) {
 			return nil, err
 		}
 		boothz := make([]string, 0)
-		elems, err := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
+		inputs, err := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//input")
 		if err != nil {
 			return nil, err
 		}
-		for _, elem := range elems {
-			key, _ := elem.GetAttribute("for")
-			value, _ := elem.Text()
-			boothz = append(boothz, key, value)
+		labels, err := wd.FindElements(sm.ByXPATH, "//div[@id='deskSeqList']//label")
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < len(inputs); i++ {
+			value, _ := inputs[i].GetAttribute("value")
+			text, _ := labels[i].Text()
+			boothz = append(boothz, value, text)
 		}
 		boothes[branchName] = boothz
-		log.Debugw("getBoothes", "branch", branch, "boothes", boothz)
+		log.Debugw("getBoothes", "branch", branchName, "boothes", boothz)
 	}
 	return boothes, nil
 }
