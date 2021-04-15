@@ -58,17 +58,20 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 		Factor: 2,
 		Jitter: true,
 	}
+	startDate, endDate := getDateWindow(req["resvDt"])
 	for {
 		select {
 		case <-done:
 			return false
 		default:
-			startDate, endDate := getDateWindow()
 			for startDate.Before(endDate) {
 				startTime, endTime := startDate, startDate.Add(workdayLength)
 				for startTime.Before(endTime) {
 					from, to := startTime, startTime.Add(slotLength)
 					startTime = to
+					if notValidDate(from) {
+						continue
+					}
 					req["resvDt"] = from.Format("20060102")
 					x := from.Format("1504")
 					y := to.Format("1504")
@@ -76,9 +79,7 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 					x = from.Format("2006-01-02 15:04")
 					y = to.Format("15:04")
 					req["resvYmd"] = fmt.Sprintf("%s~%s", x, y)
-					if from.Minute() == coronaTime {
-						continue
-					}
+
 					if ok := sendRequest(req); ok {
 						log.Debugw("MakeAppointment Success", "date", req["resvYmd"])
 						return true
@@ -120,11 +121,20 @@ func sendRequest(req map[string]string) bool {
 	return strings.Contains(body, successMessage)
 }
 
-func getDateWindow() (time.Time, time.Time) {
+func getDateWindow(prevDate string) (time.Time, time.Time) {
 	now := time.Now().Add(dayLength)
-	layout := "2006-01-02"
+	layout := "20060102"
 	startDate, _ := time.Parse(layout, now.Format(layout))
 	startDate = startDate.Add(workdayStartTime)
-	endDate := startDate.Add(windowLength)
+	endDate, err := time.Parse(layout, prevDate)
+	if err != nil {
+		endDate = startDate.Add(windowLength)
+	}
 	return startDate, endDate
+}
+
+func notValidDate(date time.Time) bool {
+	day := date.Weekday()
+	minute := date.Minute()
+	return minute == coronaTime || day == time.Saturday || day == time.Sunday
 }

@@ -38,7 +38,7 @@ func sanitizeData(data map[string]string) {
 	data["name"] = strings.ToUpper(data["name"])
 	phone := getPhoneNumber(data["phone"])
 	for i, val := range phone {
-		key := fmt.Sprintf("phone%d", i)
+		key := fmt.Sprintf("phone%d", i+1)
 		data[key] = val
 	}
 }
