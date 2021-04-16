@@ -7,6 +7,8 @@ services:
       DRIVER_HOST: driver
       DRIVER_PORT: 4444
       DRIVER_API_PREFIX: /wd/hub
+      HIKOREA_USER_ID: userid
+      HIKOREA_USER_PASSWD: passwd
     restart: on-failure
   driver:
     image: selenium/standalone-chrome

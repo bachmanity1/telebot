@@ -63,8 +63,9 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 		case <-done:
 			return false
 		default:
-			for startDate.Before(endDate) {
-				startTime, endTime := startDate, startDate.Add(workdayLength)
+			date := startDate
+			for date.Before(endDate) {
+				startTime, endTime := date, date.Add(workdayLength)
 				for startTime.Before(endTime) {
 					from, to := startTime, startTime.Add(slotLength)
 					startTime = to
@@ -84,7 +85,7 @@ func MakeAppointment(req map[string]string, done chan bool) bool {
 						return true
 					}
 				}
-				startDate = startDate.Add(dayLength)
+				date = date.Add(dayLength)
 			}
 			time.Sleep(b.Duration())
 		}

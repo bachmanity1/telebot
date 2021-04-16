@@ -3,7 +3,6 @@ package scraper
 import (
 	"fmt"
 	"telebot/util"
-	"time"
 
 	"github.com/spf13/viper"
 	sm "github.com/tebeka/selenium"
@@ -44,8 +43,8 @@ func GetBoothes(config *viper.Viper) (map[string][]string, error) {
 		return nil, err
 	}
 	defer wd.Quit()
-	wd.SetPageLoadTimeout(2 * time.Second)
-	wd.SetImplicitWaitTimeout(2 * time.Second)
+	// wd.SetPageLoadTimeout(2 * time.Second)
+	// wd.SetImplicitWaitTimeout(2 * time.Second)
 
 	userID := config.GetString("hikorea_user_id")
 	userPasswd := config.GetString("hikorea_user_passwd")

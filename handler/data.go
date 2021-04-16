@@ -90,15 +90,15 @@ var branchMarkup = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Sejongno Branch Office", "1271020"),
 	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Incheon Immigration Office", "1270700"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Incheon Immigration Office Ansan Branch Office", "1272143"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Suwon Immigration Office", "1270947"),
-	),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Incheon Immigration Office", "1270700"),
+	// ),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Incheon Immigration Office Ansan Branch Office", "1272143"),
+	// ),
+	// tgbotapi.NewInlineKeyboardRow(
+	// 	tgbotapi.NewInlineKeyboardButtonData("Suwon Immigration Office", "1270947"),
+	// ),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Ulsan  Immigration Office", "1270698"),
 	),
